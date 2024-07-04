@@ -1,0 +1,23 @@
+﻿{
+	"name": "hehep/hrouter",
+	"description": "hehep-hrouter 是一个PHP 验证器工具组件",
+	"license": "Apache-2.0",
+	"authors": [
+		{
+			"name": "hehe"
+		}
+	],
+	"require": {
+		"php": ">=7.1"
+	},
+	"autoload": {
+		"psr-4": {
+			"hrouter\\": "src/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"hrouter\\test": "tests/"
+		}
+	}
+}
