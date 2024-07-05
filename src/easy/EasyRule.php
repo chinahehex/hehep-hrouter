@@ -140,7 +140,7 @@ class EasyRule extends Rule
      * 验证action标签属性
      * @return bool
      */
-    protected function hasActionFlag()
+    public function hasActionFlag()
     {
         if (preg_match(self::ACTION_PARAMS_REGEX, $this->action)) {
             return true;
@@ -149,7 +149,7 @@ class EasyRule extends Rule
         }
     }
 
-    protected function hasUriFlag()
+    public function hasUriFlag()
     {
         if (preg_match(self::PATHINFO_PARAMS_REGEX, $this->uri)) {
             return true;
@@ -157,29 +157,7 @@ class EasyRule extends Rule
             return false;
         }
     }
-
-    public function getActionId():string
-    {
-        if (!empty($this->id)) {
-            return $this->id;
-        }
-
-        if (is_string($this->action) && $this->action !== '' && !$this->hasActionFlag()) {
-            return $this->action;
-        }
-
-        return '';
-    }
-
-    public function getUriId():string
-    {
-        if (is_string($this->uri) && $this->uri !== '' && !$this->hasUriFlag()) {
-            return $this->uri;
-        } else {
-            return '';
-        }
-    }
-
+    
     public function asParams(array $params = []):self
     {
         $this->uriParams = array_merge($this->uriParams,$params);

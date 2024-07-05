@@ -173,7 +173,7 @@ abstract class Router
      * array:['controller/action',['name'=>'1212']], ['控制器/方法',‘参数’]
      *</pre>
      */
-    public function matchRequestRules(?RouteRequest $routeRequest = null,?array $rules = [])
+    public function matchUriRules(?RouteRequest $routeRequest = null,?array $rules = [])
     {
         $matchResult = false;
         if (!empty($rules)) {
@@ -208,7 +208,7 @@ abstract class Router
      * [匹配到的规则,匹配结果]
      *</pre>
      */
-    public function matchUrlRules(string $uri,array $params = [],?array $rules = []):array
+    public function matchActionRules(string $uri,array $params = [],?array $rules = []):array
     {
 
         $matchResult = false;

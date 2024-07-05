@@ -22,82 +22,28 @@ class RuleCollector
     /**
      * action 缓存路由
      * 用于快速定位路由规则
-     * @var Rule
+     * @var array[请求类型][url][]
      */
-    protected $actionRules = [];
+    protected $staticActionRules = [];
+
+    /**
+     * action 变量路由
+     * @var array[]
+     */
+    protected $variableActionRules = [];
 
     /**
      * uri 缓存路由
      * 用于快速定位路由规则
-     * @var array
+     * @var array[请求类型][url][]
      */
-    protected $requestRules = [];
-
-    public function addRule(Rule $rule,$methods)
-    {
-        if (is_string($methods)) {
-            $methods = explode(',',$methods);
-        }
-
-        foreach ($methods as $method) {
-            $this->rules[$method][] = $rule;
-        }
-
-        $this->addCacheRule($rule);
-    }
+    protected $staticUriRules = [];
 
     /**
-     * 路由导航
-     *<B>说明：</B>
-     *<pre>
-     *  解析出请求中的模块，控制器，方法名称
-     *</pre>
-     * @param string $methods 模块/控制器/方法
-     * @return Rule[]
+     * 带变量的路由
+     * @var array[请求类型][]
      */
-    public function getRules(...$methods):array
-    {
-        $rules = [];
-        foreach ($methods as $method) {
-            if (empty($method)) {
-                continue;
-            }
-
-            $method = strtolower($method);
-            if (isset($this->rules[$method])) {
-                $rules = array_merge($rules,$this->rules[$method]);
-            }
-        }
-
-        return $rules;
-    }
-
-    public function getCacheActionRule(string $key):?EasyRule
-    {
-        if (isset($this->actionRules[$key])) {
-            return $this->actionRules[$key];
-        } else {
-            return null;
-        }
-    }
-
-    public function getCacheReuqestRule(RouteRequest $routeRequest)
-    {
-        // 先从域名缓存中读取有效规则
-//        $domain_key = $routeRequest->getFullUrl();
-//        if (isset($this->rules[self::DOMAIN_RULE_METHOD][$domain_key])
-//            && $this->checkRule($this->rules[self::DOMAIN_RULE_METHOD][$domain_key])) {
-//            return $this->rules[self::DOMAIN_RULE_METHOD][$domain_key];
-//        }
-
-        $request_key = $routeRequest->getPathinfo();
-        if (isset($this->requestRules[$request_key])) {
-            $rules = $this->checkRules($this->requestRules[$request_key],$routeRequest->getMethod());
-            return isset($rules[0]) ?  $rules[0] : null;
-        }
-
-        return null;
-    }
+    protected $variableUriRules = [];
 
     /**
      * 检测路由有效性
@@ -106,43 +52,125 @@ class RuleCollector
      */
     public function checkRules(array $rules,string $method):array
     {
-
         return array_filter($rules, function ($rule) use ($method) {
             $rule_method = $rule->getArrMethod();
             return (in_array($method,$rule_method) || in_array('*',$rule_method));
         });
+    }
 
+    public function addRule(Rule $rule,$methods)
+    {
+        if (is_string($methods)) {
+            $methods = explode(',',$methods);
+        }
+
+        $uri_flag = $rule->hasUriFlag();
+        $action_flag = $rule->hasActionFlag();
+
+        foreach ($methods as $method) {
+
+            if ($rule->getId() !== '') {
+                $this->staticActionRules[$method][$rule->getId()] = $rule;
+            }
+
+            // 生成URL缓存
+            if (!$action_flag) {
+                $this->staticActionRules[$method][$rule->getAction()] = $rule;
+            } else {
+                $this->variableActionRules[$method][] = $rule;
+            }
+
+            // 解析URL缓存
+            if (!$uri_flag) {
+                $this->staticUriRules[$method][$rule->getUri()] = $rule;
+            } else {
+                $this->variableUriRules[$method][] = $rule;
+            }
+
+        }
+
+    }
+
+    public function getStaticActionRule(string $action):?EasyRule
+    {
+        if (isset($this->staticActionRules[self::GET_RULE_METHOD][$action])) {
+            return $this->staticActionRules[self::GET_RULE_METHOD][$action];
+        } else if (isset($this->staticActionRules[self::ANY_RULE_METHOD][$action])) {
+            return $this->staticActionRules[self::ANY_RULE_METHOD][$action];
+        }
+
+        return null;
     }
 
     /**
-     * @param EasyRule $rule
+     * 获取指定请求类型的请求路由
+     *<B>说明：</B>
+     *<pre>
+     *  略
+     *</pre>
+     * @param array $methods 请求类型集合
+     * @return Rule[]
      */
-    public function addCacheRule(Rule $rule):void
+    public function getVariableActionRules(...$methods):array
     {
-        $actionId = $rule->getActionId();
-        if ($actionId !== '') {
-            $this->actionRules[$actionId] = $rule;
+        $rules = [];
+        foreach ($methods as $method) {
+            if (empty($method)) {
+                continue;
+            }
+
+            $method = strtolower($method);
+            if (isset($this->variableActionRules[$method])) {
+                $rules = array_merge($rules,$this->variableActionRules[$method]);
+            }
         }
 
-        $uriId = $rule->getUriId();
-        if ($uriId !== '') {
-            $this->requestRules[$uriId][] = $rule;
+        return $rules;
+    }
+
+
+    public function getStaticUriRule(RouteRequest $routeRequest)
+    {
+
+        $uri = $routeRequest->getPathinfo();
+        $method = $routeRequest->getMethod();
+
+        if (isset($this->staticUriRules[$method][$uri])) {
+            return $this->staticUriRules[$method][$uri];
+        } else if (isset($this->staticUriRules[self::ANY_RULE_METHOD][$uri])) {
+            return $this->staticUriRules[self::ANY_RULE_METHOD][$uri];
         }
 
+        return null;
     }
 
-    public function getGetRules(bool $getAay = false)
-    {
-        return $this->getMethodRules($getAay,self::GET_RULE_METHOD);
-    }
 
-    public function getMethodRules(bool $getAay = false,...$methods)
+
+    /**
+     * 获取指定请求类型的请求路由
+     *<B>说明：</B>
+     *<pre>
+     *  略
+     *</pre>
+     * @param array $methods 请求类型集合
+     * @return Rule[]
+     */
+    public function getVariableUriRules(...$methods):array
     {
-        if ($getAay) {
-            $methods[] = self::ANY_RULE_METHOD;
+        $rules = [];
+        foreach ($methods as $method) {
+            if (empty($method)) {
+                continue;
+            }
+
+            $method = strtolower($method);
+            if (isset($this->variableUriRules[$method])) {
+                $rules = array_merge($rules,$this->variableUriRules[$method]);
+            }
         }
 
-        return $this->getRules(...$methods);
+        return $rules;
     }
+
 
 }

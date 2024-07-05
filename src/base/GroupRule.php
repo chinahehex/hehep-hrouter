@@ -29,7 +29,6 @@ class GroupRule extends EasyRule
         parent::__construct($attrs);
 
         $this->rawUri = $this->uri;
-
         if (!$this->hasUriFlag()) {
             $this->uri = $this->uri . '<route:.*>';
             if (is_string($this->action)) {
@@ -47,6 +46,9 @@ class GroupRule extends EasyRule
         $this->syncRules();
     }
 
+    /**
+     * 执行闭包函数,收集路由规则器
+     */
     public function runCallable()
     {
         if ($this->callable instanceof \Closure) {
@@ -54,12 +56,15 @@ class GroupRule extends EasyRule
         }
     }
 
+    /**
+     * 分组的规则同步至路由规则器
+     */
     protected function syncRules()
     {
         // 开始同步分组配置给rule
         if (count($this->items) > 0) {
             foreach ($this->items as $rule) {
-                $options = $rule->getOptions(["uri","action","method","suffix","domain","uriParams"]);
+                $options = $rule->getOptions(["uri","action","method","suffix","domain","uriParams","id"]);
                 if (!empty($options['uri']) && substr($options['uri'],0,1) !== '/') {
                     $options['uri'] = $this->rawUri . '/' . $options['uri'];
                 }
@@ -84,6 +89,10 @@ class GroupRule extends EasyRule
                     $options['uriParams'] = array_merge($this->uriParams,$options['uriParams']);
                 }
 
+                if (!empty($options['id']) && !empty($this->id)) {
+                    $options['id'] = $this->id . $options['id'];
+                }
+
                 $rule->asOptions($options);
             }
 
@@ -91,22 +100,13 @@ class GroupRule extends EasyRule
         }
     }
 
+    /**
+     * 添加路由规则器至分组路由器
+     * @param Rule $rule
+     */
     public function addRule(Rule $rule):void
     {
         $this->items[] = $rule;
-    }
-
-    public function getRules(string $method):array
-    {
-        if (empty($method)) {
-            return $this->items;
-        }
-
-        return array_filter($this->items, function ($rule) use ($method) {
-            /** @var EasyRule $rule **/
-            $rule_methods = $rule->getArrMethod();
-            return in_array($method,$rule_methods);
-        });
     }
 
     public function asPrefix(string $prefix):self
@@ -123,23 +123,18 @@ class GroupRule extends EasyRule
 
     public function parseRequest(string $pathinfo,?RouteRequest $routeRequest = null)
     {
-        $this->init();
-
-        if ($this->mode === self::CREATION_ONLY) {
-            return false;
-        }
-
+        // 验证此路由分组规则器
         if (!preg_match($this->uriRegex, $pathinfo, $matches)) {
             return false;
         }
 
-        // 匹配分组子路由
+        var_dump("ddddd");
+
+        // 匹配分组路由规则器
         $rules = $this->router->ruleCollector->checkRules($this->items,$routeRequest->getMethod());
-        $matchResult = $this->router->matchRequestRules($routeRequest,$rules);
+        $matchResult = $this->router->matchUriRules($routeRequest,$rules);
 
         if ($matchResult === false) {
-
-            // 匹配此分组规则
             $matchResult = parent::parseRequest($pathinfo,$routeRequest);
         }
 

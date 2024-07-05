@@ -32,24 +32,31 @@ class EasyRouter extends Router
      */
     public function parseRequest(RouteRequest $routeRequest)
     {
-        $executeResult = false;
+        $matchResult = false;
 
-        // 执行缓存路由
-        $cacheReuqestRule = $this->ruleCollector->getCacheReuqestRule($routeRequest);
-        if (!is_null($cacheReuqestRule)) {
-            $executeResult = $this->matchRequestRules($routeRequest,[$cacheReuqestRule]);
+        // 执行静态缓存路由
+        $staticUriRule = $this->ruleCollector->getStaticUriRule($routeRequest);
+        if (!is_null($staticUriRule)) {
+            $matchResult = $this->matchUriRules($routeRequest,[$staticUriRule]);
         }
 
-        // 遍历路由
-        if ($executeResult === false) {
+        // 遍历变量路由
+        if ($matchResult === false) {
             // 执行请求方法路由规则
-            $rules = $this->ruleCollector->getMethodRules(true,$routeRequest->getMethod());
-            $executeResult = $this->matchRequestRules($routeRequest,$rules);
+            $rules = $this->ruleCollector->getVariableUriRules($routeRequest->getMethod());
+            $matchResult = $this->matchUriRules($routeRequest,$rules);
+        }
+
+        // 变量全局路由
+        if ($matchResult === false) {
+            // 执行请求方法路由规则
+            $rules = $this->ruleCollector->getVariableUriRules(RuleCollector::ANY_RULE_METHOD);
+            $matchResult = $this->matchUriRules($routeRequest,$rules);
         }
 
         $params = [];
-        if ($executeResult !== false) {
-            list ($pathinfo, $params) = $executeResult;
+        if ($matchResult !== false) {
+            list ($pathinfo, $params) = $matchResult;
         } else {
             // 匹配不到路由规则
             $pathinfo = $routeRequest->getRouterPathinfo();
@@ -105,13 +112,21 @@ class EasyRouter extends Router
             list($uri,$suffix) = explode('.',$uri);
         }
 
-        // 匹配路由规则
-        $cacheUrlRule = $this->ruleCollector->getCacheActionRule($uri);
-        if (!is_null($cacheUrlRule)) {
-            list($matchRule,$matchResult) = $this->matchUrlRules($cacheUrlRule->getAction(),$params,[$cacheUrlRule]);
-        } else {
-            list($matchRule,$matchResult) = $this->matchUrlRules($uri,$params,
-                $this->ruleCollector->getGetRules(true));
+        $matchResult = false;
+
+        // 执行静态缓存路由
+        $staticActionRule = $this->ruleCollector->getStaticActionRule($uri);
+        if (!is_null($staticActionRule)) {
+            list($matchRule,$matchResult) = $this->matchActionRules($staticActionRule->getAction(),$params,[$staticActionRule]);
+        }
+
+        // 遍历变量路由
+        if ($matchResult === false) {
+            list($matchRule,$matchResult) = $this->matchActionRules($uri,$params,$this->ruleCollector->getVariableActionRules(RuleCollector::GET_RULE_METHOD));
+        }
+
+        if ($matchResult === false) {
+            list($matchRule,$matchResult) = $this->matchActionRules($uri,$params,$this->ruleCollector->getVariableActionRules(RuleCollector::ANY_RULE_METHOD));
         }
 
         $url = "";
