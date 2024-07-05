@@ -36,9 +36,9 @@ abstract class Router
     protected $domain = false;
 
     /**
-     * @var RuleCollection
+     * @var RuleCollector
      */
-    public $ruleCollection;
+    public $ruleCollector;
 
 	/**
 	 * 构造方法
@@ -56,7 +56,7 @@ abstract class Router
             }
         }
 
-        $this->ruleCollection = new RuleCollection();
+        $this->ruleCollector = new RuleCollector();
 
 	}
 
@@ -70,14 +70,14 @@ abstract class Router
 	 * @param string $method 方法
      * @return void
 	 */
-	public function addRules(array $rules = [],string $method = RuleCollection::DEFAULT_RULE_METHOD):void
+	public function addRules(array $rules = [],string $method = RuleCollector::DEFAULT_RULE_METHOD):void
 	{
         if (empty($rules)) {
             return;
         }
 
         if (empty($method)) {
-            $method = RuleCollection::DEFAULT_RULE_METHOD;
+            $method = RuleCollector::DEFAULT_RULE_METHOD;
         }
 
         foreach ($rules as $rule) {
@@ -90,9 +90,9 @@ abstract class Router
 
             if ($rule instanceof GroupRule) {
                 $rule->initGroup();
-                $this->ruleCollection->addRule($rule,$rule_methods);
+                $this->ruleCollector->addRule($rule,$rule_methods);
             } else {
-                $this->ruleCollection->addRule($rule,$rule_methods);
+                $this->ruleCollector->addRule($rule,$rule_methods);
             }
         }
 	}

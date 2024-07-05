@@ -134,7 +134,7 @@ class GroupRule extends EasyRule
         }
 
         // 匹配分组子路由
-        $rules = $this->router->ruleCollection->checkRules($this->items,$routeRequest->getMethod());
+        $rules = $this->router->ruleCollector->checkRules($this->items,$routeRequest->getMethod());
         $matchResult = $this->router->matchRequestRules($routeRequest,$rules);
 
         if ($matchResult === false) {

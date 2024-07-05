@@ -13,23 +13,13 @@ use hehe\core\hrouter\base\Rule;
  */
 class EasyRule extends Rule
 {
-    // pathinfo 参数匹配正则表达式/
+    // 匹配 pathinfo 正则表达式/
     const PATHINFO_PARAMS_REGEX = '/<(\w+):?([^>]+)?>|\\{(\w+):?([^\\}]+)?\\}/';
     const PATHINFO_PARAMS_REGEX1 = '/<(\w+):?([^>]+)?>/';
     const PATHINFO_PARAMS_REGEX2 = '/\\{(\w+):?([^\\}]+)?\\}/';
 
-    // URL参数匹配正则表达式/
+    // 匹配action 正则表达式
     const ACTION_PARAMS_REGEX = '/<(\w+)>|\\{(\w+)\\}/';
-
-    // 参数左边分隔符
-    const PARAMS_LEFT_FLAG = "<";
-
-    // 参数左边分隔符
-    const PARAMS_RIGHT_FLAG = ">";
-
-    const REG_SPLIT = "/";
-
-
 
     /**
      * url 正则表达式
@@ -305,12 +295,12 @@ class EasyRule extends Rule
 
     private function buildFlagName($name):string
     {
-        return self::PARAMS_LEFT_FLAG . $name . self::PARAMS_RIGHT_FLAG;
+        return "<{$name}>";
     }
 
     protected function buildUri():void
     {
-        $this->uri = trim($this->uri,self::REG_SPLIT);
+        $this->uri = trim($this->uri,'/');
 
         // 从uri 提取相关参数
         $this->buildUriParams();
@@ -354,7 +344,7 @@ class EasyRule extends Rule
             return;
         }
 
-        $this->action = trim($this->action, self::REG_SPLIT);
+        $this->action = trim($this->action, '/');
 
         // 从action 提取相关参数
         $this->buildActionParams();
@@ -443,7 +433,7 @@ class EasyRule extends Rule
 
         // 解析路由参数
         if (!empty($this->pvar) && isset($params[$this->pvar])) {
-            $raw_params = trim($params[$this->pvar],self::REG_SPLIT);
+            $raw_params = trim($params[$this->pvar],'/');
             unset($params[$this->pvar]);
             $params = array_merge($params,$this->getParamRule()->parse($raw_params));
         }
@@ -521,7 +511,7 @@ class EasyRule extends Rule
             }
         }
 
-        $url = trim(strtr($this->urlTemplate, $replaceParams), self::REG_SPLIT);
+        $url = trim(strtr($this->urlTemplate, $replaceParams), '/');
 
         return [$url,$urlParams];
     }

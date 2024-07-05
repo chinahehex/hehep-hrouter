@@ -3,7 +3,7 @@ namespace hehe\core\hrouter\base;
 
 use hehe\core\hrouter\easy\EasyRule;
 
-class RuleCollection
+class RuleCollector
 {
     const GET_RULE_METHOD = 'get';
     const POST_RULE_METHOD = 'post';
@@ -18,6 +18,20 @@ class RuleCollection
     const DOMAIN_RULE_METHOD = 'domain';
 
     public $rules = [];
+
+    /**
+     * action 缓存路由
+     * 用于快速定位路由规则
+     * @var Rule
+     */
+    protected $actionRules = [];
+
+    /**
+     * uri 缓存路由
+     * 用于快速定位路由规则
+     * @var array
+     */
+    protected $requestRules = [];
 
     public function addRule(Rule $rule,$methods)
     {
@@ -58,10 +72,10 @@ class RuleCollection
         return $rules;
     }
 
-    public function getUrlCacheRule(string $key):?EasyRule
+    public function getCacheActionRule(string $key):?EasyRule
     {
-        if (isset($this->rules[self::MAP_RULE_METHOD][$key])) {
-            return $this->rules[self::MAP_RULE_METHOD][$key];
+        if (isset($this->actionRules[$key])) {
+            return $this->actionRules[$key];
         } else {
             return null;
         }
@@ -77,8 +91,8 @@ class RuleCollection
 //        }
 
         $request_key = $routeRequest->getPathinfo();
-        if (isset($this->rules[self::REQUEST_RULE_METHOD][$request_key])) {
-            $rules = $this->checkRules($this->rules[self::REQUEST_RULE_METHOD][$request_key],$routeRequest->getMethod());
+        if (isset($this->requestRules[$request_key])) {
+            $rules = $this->checkRules($this->requestRules[$request_key],$routeRequest->getMethod());
             return isset($rules[0]) ?  $rules[0] : null;
         }
 
@@ -92,15 +106,12 @@ class RuleCollection
      */
     public function checkRules(array $rules,string $method):array
     {
-        $ruleList = [];
-        foreach ($rules as $rule) {
-            $methods = $rule->getArrMethod();
-            if (in_array($method,$methods)){
-                $ruleList[] = $rule;
-            }
-        }
 
-        return $ruleList;
+        return array_filter($rules, function ($rule) use ($method) {
+            $rule_method = $rule->getArrMethod();
+            return (in_array($method,$rule_method) || in_array('*',$rule_method));
+        });
+
     }
 
     /**
@@ -110,12 +121,12 @@ class RuleCollection
     {
         $actionId = $rule->getActionId();
         if ($actionId !== '') {
-            $this->rules[self::MAP_RULE_METHOD][$actionId] = $rule;
+            $this->actionRules[$actionId] = $rule;
         }
 
         $uriId = $rule->getUriId();
         if ($uriId !== '') {
-            $this->rules[self::REQUEST_RULE_METHOD][$uriId][] = $rule;
+            $this->requestRules[$uriId][] = $rule;
         }
 
     }

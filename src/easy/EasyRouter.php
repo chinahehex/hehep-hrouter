@@ -4,7 +4,7 @@ namespace hehe\core\hrouter\easy;
 use hehe\core\hrouter\base\Router;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
-use hehe\core\hrouter\base\RuleCollection;
+use hehe\core\hrouter\base\RuleCollector;
 
 /**
  * esay url路由控制类
@@ -35,7 +35,7 @@ class EasyRouter extends Router
         $executeResult = false;
 
         // 执行缓存路由
-        $cacheReuqestRule = $this->ruleCollection->getCacheReuqestRule($routeRequest);
+        $cacheReuqestRule = $this->ruleCollector->getCacheReuqestRule($routeRequest);
         if (!is_null($cacheReuqestRule)) {
             $executeResult = $this->matchRequestRules($routeRequest,[$cacheReuqestRule]);
         }
@@ -43,7 +43,7 @@ class EasyRouter extends Router
         // 遍历路由
         if ($executeResult === false) {
             // 执行请求方法路由规则
-            $rules = $this->ruleCollection->getMethodRules(true,$routeRequest->getMethod());
+            $rules = $this->ruleCollector->getMethodRules(true,$routeRequest->getMethod());
             $executeResult = $this->matchRequestRules($routeRequest,$rules);
         }
 
@@ -106,12 +106,12 @@ class EasyRouter extends Router
         }
 
         // 匹配路由规则
-        $cacheUrlRule = $this->ruleCollection->getUrlCacheRule($uri);
+        $cacheUrlRule = $this->ruleCollector->getCacheActionRule($uri);
         if (!is_null($cacheUrlRule)) {
             list($matchRule,$matchResult) = $this->matchUrlRules($cacheUrlRule->getAction(),$params,[$cacheUrlRule]);
         } else {
             list($matchRule,$matchResult) = $this->matchUrlRules($uri,$params,
-                $this->ruleCollection->getGetRules(true));
+                $this->ruleCollector->getGetRules(true));
         }
 
         $url = "";

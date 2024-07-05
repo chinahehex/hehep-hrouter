@@ -5,7 +5,7 @@ use hehe\core\hrouter\base\GroupRule;
 use hehe\core\hrouter\base\Router;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
-use hehe\core\hrouter\base\RuleCollection;
+use hehe\core\hrouter\base\RuleCollector;
 use hehe\core\hrouter\easy\EasyRouter;
 use hehe\core\hrouter\easy\EasyRule;
 
@@ -134,37 +134,37 @@ class RouteManager
 
     public function get(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollection::GET_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,RuleCollector::GET_RULE_METHOD,$options);
     }
 
     public function post(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollection::POST_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,RuleCollector::POST_RULE_METHOD,$options);
     }
 
     public function put(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollection::PUT_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,RuleCollector::PUT_RULE_METHOD,$options);
     }
 
     public function patch(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollection::PATCH_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,RuleCollector::PATCH_RULE_METHOD,$options);
     }
 
     public function delete(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollection::DELETE_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,RuleCollector::DELETE_RULE_METHOD,$options);
     }
 
     public function head(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollection::HEAD_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,RuleCollector::HEAD_RULE_METHOD,$options);
     }
 
     public function any(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollection::ANY_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,RuleCollector::ANY_RULE_METHOD,$options);
     }
 
 
