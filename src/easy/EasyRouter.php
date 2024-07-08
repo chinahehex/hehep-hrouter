@@ -55,6 +55,7 @@ class EasyRouter extends Router
         }
 
         $params = [];
+        $matchRule = null;
         if ($matchResult !== false) {
             list ($pathinfo, $params,$matchRule) = $matchResult;
         } else {
@@ -62,7 +63,7 @@ class EasyRouter extends Router
             $pathinfo = $routeRequest->getRouterPathinfo();
         }
 
-        $routeRequest->setRequestResult([$pathinfo,$params]);
+        $routeRequest->setMatchResult([$pathinfo,$params,$matchRule]);
 
         return $routeRequest;
     }

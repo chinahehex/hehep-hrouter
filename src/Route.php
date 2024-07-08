@@ -29,7 +29,7 @@ class Route
      * @param array $options
      * @return EasyRule
      */
-    public static function addRoute(string $uri = '',string $action = '',string $method = '',array $options = []):EasyRule
+    public static function addRoute(string $uri = '',string $action = '',string $method = RuleCollector::ANY_RULE_METHOD,array $options = []):EasyRule
     {
         $easyRule = RouteManager::createRule($uri,$action,$method,$options);
         static::register($easyRule);

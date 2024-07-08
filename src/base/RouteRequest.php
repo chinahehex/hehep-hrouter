@@ -29,6 +29,12 @@ class RouteRequest
     protected $router;
 
     /**
+     * 匹配到的路由对象
+     * @var Rule
+     */
+    protected $rule;
+
+    /**
      * pathinfo 缓存地址
      * @var string
      */
@@ -115,12 +121,13 @@ class RouteRequest
      * 设置解析的结果
      * @param $result
      */
-    public function setRequestResult(?array $result):void
+    public function setMatchResult(?array $matchResult):void
     {
-        if (!empty($result)) {
-            list($url,$params) = $result;
+        if (!empty($matchResult)) {
+            list($url,$params,$rule) = $matchResult;
             $this->url = $url;
             $this->params = array_merge($this->params,$params);
+            $this->rule = $rule;
         }
     }
 
@@ -142,6 +149,11 @@ class RouteRequest
     public function getRouteParams():array
     {
         return $this->params;
+    }
+
+    public function getRouteRule():?Rule
+    {
+        return $this->rule;
     }
 
     /**

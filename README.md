@@ -1,10 +1,10 @@
 # hehep-hrouter
 
-目录
-
 ## 介绍
-- hehep-hrouter 是一个PHP 路由工具组件,仿Yii2 路由规则
+- hehep-hrouter 是一个PHP 路由工具组件
 - 支持注释注解,PHP8原生注解
+- 支持分组路由
+- 支持key/value结构存储路由,支持合并路由解析操作,快速定位路由，提高匹配效率
 
 ## 安装
 - **gitee下载**:
@@ -66,8 +66,8 @@ $route_conf = [
 ## 路由管理器
 - 说明
 ```
-路由主要负责解析url(解析的结果又用户处理),生成url 地址
-路由解析有两部分组成:地址解析+参数解析
+路由管理器:收集路由信息,解析url地址,生成url 地址
+路由解析由两部分组成:地址(pathinfo)解析+参数解析
 ```
 - 示例代码
 ```php
@@ -77,7 +77,7 @@ use hehe\core\hrouter\Route;
 // 创建路由管理器对象
 $hrouter = new RouteManager([]);
 
-// 注册路由
+// 收集路由
 Route::get("user/get","user/get","get");
 $hrouter->addRoute("user/<id:\d+>","user/get","get");
 
@@ -85,6 +85,7 @@ $hrouter->addRoute("user/<id:\d+>","user/get","get");
 $routeReuqst = $hrouter->parseRequest();
 $action = $routeReuqst->getRouteUrl();//  获取解析后的"路由地址"
 $params = $routeReuqst->getRouteParams();// 获取解析后的额外参数
+$rule = $routeReuqst->getRouteRule();// 获取匹配到的路由规则对象
 // $action 结果:user/get,$params: ["id"=>123]
 
 // 生成URL地址
@@ -96,13 +97,14 @@ $url = $hrouter->buildUrL("user/get",["id"=>122]);
 ## 路由请求
 - 说明
 ```
-路由请求主要功能是为路由解析器提供数据,比如路由请求可以提供pathinfo地址,host,method 等参数
-默认路由请求:
+路由请求类:存储路由解析器需要的数据,比如路由请求对象可以提供pathinfo地址,host,method 等数据
+默认路由请求类:
 WebRouteRequest:常规web路由请求,比如php+nginx 环境下运行web项目
 ConsoleRouteRequest:控制台路由请求,比如php脚本环境下运行web项目
+
 ```
 
-- 自定义路由请求类
+- 定义路由请求类
 ```php
 namespace hehe\core\extend;
 use hehe\core\hrouter\base\RouteRequest;
@@ -130,13 +132,15 @@ class AppRouteRequest extends RouteRequest
     }
 }
 ```
-- 自定义路由请求示例
+- 路由请求使用示例
 ```php
 use hehe\core\hrouter\RouteManager;
 use hehe\core\extend\AppRouteRequest;
 
 // 创建路由管理器对象
 $hrouter = new RouteManager([]);
+
+// 创建路由请求对象
 $routeRequest = new AppRouteRequest();
 
 // 解析URL地址
@@ -145,6 +149,7 @@ $hrouter->parseRequest($routeRequest);
 // 获取解析结果
 $action = $routeReuqst->getRouteUrl();//  获取解析后的"路由地址"
 $params = $routeReuqst->getRouteParams();// 获取解析后的额外参数
+$rule = $routeReuqst->getRouteRule();// 获取匹配到的路由规则对象
 
 ```
 
@@ -152,13 +157,12 @@ $params = $routeReuqst->getRouteParams();// 获取解析后的额外参数
 ### 说明
 ```
 基本格式:["uri"=>"<controller:\w+>/<action:\w+>","action"=>"<controller>/<action>","method"=>"get"]
-变量参数:格式<参数名>,<参数名:正则表达式> 或{参数名},{参数名:正则表达式},如<controller:\w+>
-uri:路由规则,即解析http地址规则定义
-action:路由地址,即控制器/操作，用于生成url地址
+变量参数:格式<变量名>,<变量名:正则表达式> 或{变量名},{变量名:正则表达式},如<controller:\w+>
+uri:路由规则,即匹配http地址的规则表达式
+action:路由地址,即匹配控制器/操作的表达式，常用于生成url地址
 method:请求类型，多个请求类型逗号或|隔开
 ```
 
-### 注册路由
 ### 常规路由
 ```php
 use hehe\core\hrouter\Route;
@@ -186,7 +190,17 @@ Route::get("user/<action:get|list>","user/<action>");
 
 ```
 
-### 可选参数路由
+### 可选变量路由
+- 说明
+```
+在变量参数表达式中末尾带？问号,标识此变量参数为可选
+以下格式可设置为可选变量:
+<id:\d+?>
+<id?>
+->asParams(["id"=>"\d+?"])
+```
+
+- 示例代码
 ```php
 use hehe\core\hrouter\Route;
 
@@ -219,6 +233,7 @@ Route::get("user/add","app/user/AdminController@add");
 ```
 
 ## 路由规则参数
+
 - 路由参数集合
 
 参数 | 说明 | 方法名| 示例
@@ -247,6 +262,7 @@ Route::get("user/<id:\d+>","user/get")
 // 设置路由唯一标识,生成地址时,直接使用"news"定位此条规则,避免了遍历查找
 Route::get("news/<id:\d+>","news/get")
     ->asId("news");
+    
 $htouer = new RouteManager();
 /** 使用"news"生成URL地址,最后地址为:"news/122" **/
 $htouer->buildUrL("news",["id"=>122]);
@@ -269,8 +285,10 @@ Route::get("<language:\w+/?>news/list","news/list")
 ```php
 use hehe\core\hrouter\RouteManager;
 use hehe\core\hrouter\Route;
+
 Route::get("<language:\w+/?>news/list","news/list")
     ->asDefaults(['language'=>'ch']);
+    
 $hrouter = new RouteManager([]);
 
 // 解析的有效URL地址,ch/news/list,en/news/list,news/list
@@ -293,8 +311,8 @@ $url = $hrouter->buildUrL("news/list",["language"=>"en"]);
 ## 分组路由
 - 说明
 ```
-分组路由的目的:集中设置参数,提高匹配效率
-分组路由规则:常规路由已设置过的参数无法被分组参数覆盖
+分组路由目的:集中设置参数,提高匹配效率
+分组路由规则:子路由参数优先与组路由参数,即分组设置的参数无法覆盖子路由设置的参数
 ```
 
 - 示例代码
@@ -308,7 +326,7 @@ Route::addGroup("blog",function(){
 });
 ```
 
-### 设置路由规则参数
+### 设置规则参数
 ```php
 use hehe\core\hrouter\Route;
 Route::addGroup("blog",function(){
@@ -328,7 +346,7 @@ Route::addGroup("blog",function(){
 
 ```
 
-### 带参数的分组
+### 带变量参数的分组
 ```php
 use hehe\core\hrouter\Route;
 Route::addGroup("<module:\w+>/blog",function(){
@@ -351,7 +369,16 @@ Route::addGroup("<module:\w+>/blog",function(){
 
 ```
 
-### 路由规则合并解析
+### 合并路由解析
+
+- 说明
+```
+合并解析目的:提高匹配效率
+合并规则:只合并相同请求类型的路由
+可选参数:支持指定合并的条数
+```
+
+- 示例代码
 ```php
 use hehe\core\hrouter\Route;
 
@@ -385,8 +412,6 @@ Route::addGroup("blog",function(){
 `mergeRule`  | asMergeRule(5) |&check;| &cross;|&cross;;|路由规则合并成一条正则表达式进行验证，可以指定一次合并N条
 
 
-
-
 ### 域名路由
 - 说明
 ```
@@ -402,13 +427,6 @@ Route::get("http://<language:[a-z]+>.xxx.com/user/get","user/get");
 ```php
 
 ```
-
-
-
-
-
-
-
 
 ## URL参数解析
 
@@ -597,7 +615,7 @@ $url = $hrouter->buildUrL("news/get",["#"=>"add"],['suffix'=>"html"]);
 
 ```
 
-## restful规则
+## restful路由
 
 - 常规格式
 ```php
