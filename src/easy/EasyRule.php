@@ -157,7 +157,7 @@ class EasyRule extends Rule
             return false;
         }
     }
-    
+
     public function asParams(array $params = []):self
     {
         $this->uriParams = array_merge($this->uriParams,$params);
@@ -170,6 +170,32 @@ class EasyRule extends Rule
         $this->defaults = array_merge($this->defaults,$params);
 
         return $this;
+    }
+
+    public function getUriParams():array
+    {
+        return $this->uriParams;
+    }
+
+
+    public function getUriRegex():string
+    {
+        return $this->uriRegex;
+    }
+
+    public function getActionRegex()
+    {
+        return $this->actionRegex;
+    }
+
+    public function getActionParams():array
+    {
+        return $this->actionParams;
+    }
+
+    protected function buildRegex(string $regex,$end = '$#u',$first = '#^'):string
+    {
+        return $first . $regex . $end;
     }
 
     protected function getParamRule():ParamRule
@@ -271,7 +297,7 @@ class EasyRule extends Rule
         }
     }
 
-    private function buildFlagName($name):string
+    public function buildFlagName($name):string
     {
         return "<{$name}>";
     }
@@ -308,9 +334,9 @@ class EasyRule extends Rule
         $uri_regex = '';
 
         if (empty($this->urlTemplate)) {
-            $uri_regex = '#^' . $this->uri . '$#u';
+            $uri_regex = $this->uri;
         } else {
-            $uri_regex = '#^' . trim(strtr($this->urlTemplate, $replaceParams), '/') . '$#u';
+            $uri_regex = trim(strtr($this->urlTemplate, $replaceParams), '/');
         }
 
         $this->uriRegex = $uri_regex;
@@ -323,14 +349,14 @@ class EasyRule extends Rule
         }
 
         $this->action = trim($this->action, '/');
-
+        $this->action = preg_replace([self::PATHINFO_PARAMS_REGEX1,self::PATHINFO_PARAMS_REGEX2], ['<$1>','<$1>'], $this->action);
         // 从action 提取相关参数
         $this->buildActionParams();
 
         /** 以下代码生成action正则表达式 **/
         $action_regex = '';
         if (empty($this->actionParams)) {
-            $action_regex = '#^' . $this->action . '$#u';
+            $action_regex = $this->action;
         } else {
             $replaceParams = [];
             foreach ($this->actionParams  as $name=>$value) {
@@ -343,33 +369,21 @@ class EasyRule extends Rule
                 }
             }
 
-            $action_regex = '#^' . strtr($this->action, $replaceParams) . '$#u';
+            $action_regex = strtr($this->action, $replaceParams);
         }
 
         $this->actionRegex = $action_regex;
     }
 
+
+
     /**
-     * 解析请求路由
-     *<B>说明：</B>
-     *<pre>
-     * 略
-     *</pre>
-     * @param string $pathinfo 路由地址 控制器/方法
-     * @return array [URL地址,URL 参数]
+     * 解析Uri匹配到的参数
+     * @param array $matches
+     * @param RouteRequest $routeRequest
      */
-    public function parseRequest(string $pathinfo,?RouteRequest $routeRequest = null)
+    public function parseUriMatches(array $matches,?RouteRequest $routeRequest = null):array
     {
-        $this->init();
-
-        if ($this->mode === self::CREATION_ONLY) {
-            return false;
-        }
-
-        if (!preg_match($this->uriRegex, $pathinfo, $matches)) {
-            return false;
-        }
-
         // 合并默认参数
         foreach ($this->defaults as $name => $value) {
             if (!isset($matches[$name]) || $matches[$name] === '') {
@@ -403,10 +417,10 @@ class EasyRule extends Rule
         }
 
 
-        if ($this->uriRegex !== null) {
+        if ($this->action !== '') {
             $url = strtr($this->action, $action_replace_params);
         } else {
-            $url = $this->action;
+            $url = strtr($this->urlTemplate, $action_replace_params);
         }
 
         // 解析路由参数
@@ -416,37 +430,20 @@ class EasyRule extends Rule
             $params = array_merge($params,$this->getParamRule()->parse($raw_params));
         }
 
-        return [$url, $params];
+        return [$url, $params,$this];
     }
 
     /**
-     * 解析url地址
-     *<B>说明：</B>
-     *<pre>
-     * 略
-     *</pre>
-     * @param string $url url 地址
-     * @param array $params url 参数
-     * @return array [URL地址,URL 参数]
+     * @param array $matches
+     * @param string $url
+     * @param array $params
      */
-    public function parseUrL(string $url = '',array $params = [])
+    public function parseActionMatches(array $matches = [],string $url = '',array $params = []):array
     {
-        $this->init();
-
-        if ($this->mode === self::PARSING_ONLY) {
-            return false;
-        }
-
-        // url 最终替换参数
         $replaceParams = [];
         $urlRegexParams = [];
-        $matches = [];
-        // 匹配url 正则表达式,
-        if ($url !== $this->actionRegex) {
-            if ($this->actionRegex == null || preg_match($this->actionRegex, $url, $matches) === 0) {
-                return false;
-            }
 
+        if (!empty($matches)) {
             foreach ($this->actionParams as $name => $val) {
                 if (isset($matches[$name])) {
                     $urlRegexParams[$name] = $matches[$name];
@@ -491,6 +488,61 @@ class EasyRule extends Rule
 
         $url = trim(strtr($this->urlTemplate, $replaceParams), '/');
 
-        return [$url,$urlParams];
+        return [$url,$urlParams,$this];
+    }
+
+    /**
+     * 解析请求路由
+     *<B>说明：</B>
+     *<pre>
+     * 略
+     *</pre>
+     * @param string $pathinfo 路由地址 控制器/方法
+     * @return array [URL地址,URL 参数]
+     */
+    public function parseRequest(string $pathinfo,?RouteRequest $routeRequest = null)
+    {
+        $this->init();
+
+        if ($this->mode === self::CREATION_ONLY) {
+            return false;
+        }
+
+        if (!preg_match($this->buildRegex($this->uriRegex,($this->completeMatch ? '$#' : '#')), $pathinfo, $matches)) {
+            return false;
+        }
+
+        // 解析匹配结果
+        $matcheResult = $this->parseUriMatches($matches,$routeRequest);
+
+        return $matcheResult;
+    }
+
+    /**
+     * 解析url地址
+     *<B>说明：</B>
+     *<pre>
+     * 略
+     *</pre>
+     * @param string $url url 地址
+     * @param array $params url 参数
+     * @return array [URL地址,URL 参数]
+     */
+    public function parseUrL(string $url = '',array $params = [])
+    {
+        $this->init();
+
+        if ($this->mode === self::PARSING_ONLY) {
+            return false;
+        }
+
+        // url 最终替换参数
+        $matches = [];
+        // 匹配url 正则表达式,
+        if ($this->actionRegex == '' || preg_match($this->buildRegex($this->actionRegex), $url, $matches) === 0) {
+            return false;
+        }
+
+        return $this->parseActionMatches($matches,$url,$params);
     }
 }

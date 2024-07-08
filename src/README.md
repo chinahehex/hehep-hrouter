@@ -218,62 +218,46 @@ Route::get("<module:\w+/?>news/<action:get|list>","<module>news/<action>");
 Route::get("user/add","app/user/AdminController@add");
 ```
 
-### 分组路由
-- 说明
-```
-分组路由的目的:集中设置参数,提高匹配效率
-分组路由规则:常规路由已设置过的参数无法被分组参数覆盖
-```
+## 路由规则参数
+- 路由参数集合
+
+参数 | 说明 | 方法名| 示例
+----------|-------------|------------|------------
+`domain`  | 是否域名检测 | asDomain | asDomain(),asDomain(true)
+`suffix`  | 生成URL地址时是否加入后缀 | asSuffix | asSuffix(),asSuffix("html")
+`method`  | 请求类型 | asMethod | asMethod("get"),asMethod("get|post")
+`id`  | 路由唯一标识(全局唯一),用于快速生成URL地址 | asId | asId("news")
+`uriParams`  | "路由规则"参数集合 | asParams | asParams(["id"=>"\d+"])
+`defaults`  | 默认参数集合 | asDefaults | asDefaults(['language'=>'en']),asDefaults(['page'=>1])
+`completeMatch`  | 是否完全匹配路由规则(正则最后添加$结束符),默认完全匹配 | asCompleteMatch | asCompleteMatch(false)
 
 - 示例代码
 ```php
+use hehe\core\hrouter\RouteManager;
 use hehe\core\hrouter\Route;
-Route::addGroup("blog",function(){
-    Route::addRoute("list","blog/list");
-    Route::get("get/<id>","blog/get");
-    Route::post("add","blog/doadd");
-    Route::get("add","blog/doadd");
-});
+
+// 设置"路由规则"参数
+Route::get("user/<id>","user/get")
+    ->asParams(["id"=>"\d+"]);
+    
+// 设置生成URL后缀,生成的URL地址为:user/{id}.html  
+Route::get("user/<id:\d+>","user/get")
+    ->asSuffix();
+
+// 设置路由唯一标识,生成地址时,直接使用"news"定位此条规则,避免了遍历查找
+Route::get("news/<id:\d+>","news/get")
+    ->asId("news");
+$htouer = new RouteManager();
+/** 使用"news"生成URL地址,最后地址为:"news/122" **/
+$htouer->buildUrL("news",["id"=>122]);
+
+// 设置默认参数
+Route::get("news/list/<page:\d+>","news/list")
+    ->asDefaults(["page"=>1]);
+
+Route::get("<language:\w+/?>news/list","news/list")
+    ->asDefaults(['language'=>'ch']);
 ```
-
-- 设置参数
-```php
-use hehe\core\hrouter\Route;
-Route::addGroup("blog",function(){
-    Route::addRoute("list","list");
-    Route::get("get/<id>","get");
-    Route::post("add","doadd");
-    Route::get("/hblog/add","doadd");
-    Route::get("page","page/list");
-})->asParams(["id"=>"\d+"])->asSuffix("html")->asPrefix("hblog/")->asMethod("get");
-
-// 分组后相当于
-// Route::addRoute("blog/list","hblog/list");
-// Route::get("get/<id:\d+>","hblog/get");
-// Route::post("blog/add","hblog/doadd");
-// Route::post("hblog/add","hblog/doadd");
-// Route::post("blog/page","hblog/page/list");
-
-
-```
-
-
-### 域名路由
-- 说明
-```
-
-```
-
-- 常规域名路由
-```php
-Route::get("http://<language:[a-z]+>.xxx.com/user/get","user/get");
-```
-
-- 分组域名路由
-```php
-
-```
-
 
 ### 默认参数路由
 - 说明
@@ -306,47 +290,125 @@ $url = $hrouter->buildUrL("news/list",["language"=>"en"]);
 // $url:"en/news/list"
 ```
 
+## 分组路由
+- 说明
+```
+分组路由的目的:集中设置参数,提高匹配效率
+分组路由规则:常规路由已设置过的参数无法被分组参数覆盖
+```
 
-
-## 路由规则参数
-- 路由参数集合
-
-参数 | 说明 | 方法名| 示例
-----------|-------------|------------|------------
-`domain`  | 是否域名检测 | asDomain | asDomain(),asDomain(true)
-`suffix`  | 生成URL地址时是否加入后缀 | asSuffix | asSuffix(),asSuffix("html")
-`method`  | 请求类型 | asMethod | asMethod("get"),asMethod("get|post")
-`id`  | 路由唯一标识(全局唯一),用于快速生成URL地址 | asId | asId("news")
-`uriParams`  | "路由规则"参数集合 | asParams | asParams(["id"=>"\d+"])
-`defaults`  | 默认参数集合 | asDefaults | asDefaults(['language'=>'en']),asDefaults(['page'=>1])
-  
 - 示例代码
 ```php
-use hehe\core\hrouter\RouteManager;
+use hehe\core\hrouter\Route;
+Route::addGroup("blog",function(){
+    Route::addRoute("list","blog/list");
+    Route::get("get/<id>","blog/get");
+    Route::post("add","blog/doadd");
+    Route::get("add","blog/doadd");
+});
+```
+
+### 设置路由规则参数
+```php
+use hehe\core\hrouter\Route;
+Route::addGroup("blog",function(){
+    Route::addRoute("list","list");
+    Route::get("get/<id>","get");
+    Route::post("add","doadd");
+    Route::get("/hblog/add","doadd");
+    Route::get("page","page/list");
+})->asParams(["id"=>"\d+"])->asPrefix("hblog/");
+
+// 分组后相当于
+// Route::addRoute("blog/list","hblog/list");
+// Route::get("get/<id:\d+>","hblog/get")->asParams(["id"=>"\d+"]);
+// Route::post("blog/add","hblog/doadd");
+// Route::get("hblog/add","hblog/doadd");
+// Route::get("blog/page","hblog/page/list");
+
+```
+
+### 带参数的分组
+```php
+use hehe\core\hrouter\Route;
+Route::addGroup("<module:\w+>/blog",function(){
+    Route::addRoute("list","list");
+    Route::get("get/<id>","get");
+    Route::post("add","doadd");
+    Route::get("/hblog/add","/hblog/doadd");
+    Route::get("page","page/list")->asSuffix("shtml");
+})->asMethod("get")
+    ->asPrefix("<module>/hblog/")
+    ->asParams(["id"=>"\d+"])
+    ->asSuffix("html");
+
+// 分组后相当于
+// Route::addRoute("<module:\w+>/blog/list","<module>/hblog/list")->asSuffix("html");
+// Route::get("<module:\w+>/blog/get/<id:\d+>","<module>/hblog/get")->asParams(["id"=>"\d+"]);
+// Route::post("<module:\w+>/blog/add","<module>/hblog/doadd")->asSuffix("html");
+// Route::get("hblog/add","hblog/doadd")->asSuffix("html");
+// Route::get("<module:\w+>/blog/page","<module>/hblog/page/list")->asSuffix("shtml");
+
+```
+
+### 路由规则合并解析
+```php
 use hehe\core\hrouter\Route;
 
-// 设置"路由规则"参数
-Route::get("user/<id>","user/get")
-    ->asParams(["id"=>"\d+"]);
-    
-// 设置生成URL后缀,生成的URL地址为:user/{id}.html  
-Route::get("user/<id:\d+>","user/get")
-    ->asSuffix();
+// 只能相同请求类型的路由规则合并
 
-// 设置路由唯一标识,生成地址时,直接使用"news"定位此条规则,避免了遍历查找
-Route::get("news/<id:\d+>","news/get")
-    ->asId("news");
-$htouer = new RouteManager();
-/** 使用"news"生成URL地址,最后地址为:"news/122" **/
-$htouer->buildUrL("news",["id"=>122]);
+// get/<id>,geta/<id>,getb/<id> 合并成一条正则表达式进行验证,
+Route::addGroup("blog",function(){
+    Route::get("get/<id>","get");
+    Route::get("geta/<id>","geta");
+    Route::get("getb/<id>","getb");
+})->asMethod("get")->asParams(["id"=>"\d+"])->asMergeRule();
 
-// 设置默认参数
-Route::get("news/list/<page:\d+>","news/list")
-    ->asDefaults(["page"=>1]);
 
-Route::get("<language:\w+/?>news/list","news/list")
-    ->asDefaults(['language'=>'ch']);
+// 指定路由规则每次合并数量,如合并数量为2时, (get/<id>,geta/<id>)一组合并,(getb/<id>)单独一组,
+Route::addGroup("blog",function(){
+    Route::get("get/<id>","get");
+    Route::get("geta/<id>","geta");
+    Route::get("getb/<id>","getb");
+})->asMethod("get")->asParams(["id"=>"\d+"])->asMergeRule(2);
+
 ```
+
+### 分组参数与子路由参数的同步
+
+参数 | 方法 | 分组路由|常规路由| 同步至常规路由 | 说明
+----------|------------|:-----:|:-------:|:-----:|------------
+`suffix`  | asSuffix() |&check;| &check;|&check;|统一设置子路由后缀
+`id`  | asId() |&check;| &check;|&check;|统一设置子路由的id前缀,如分组id:admin::,如子路由id:user,最终子路由id:admin::user
+`uriParams`  | asParams() |&check;| &check;|&check;|统一设置子路由变量,子路由变量与分组变量合并,并且子路由变量优先
+`prefix`  | asPrefix("blog/") |&check;| &cross;|&check;|统一设置子路由action前缀(首字符为"/"的除外),分组prefix:blog/,子路由action:list,最终子路由action：blog/list
+`mergeRule`  | asMergeRule(5) |&check;| &cross;|&cross;;|路由规则合并成一条正则表达式进行验证，可以指定一次合并N条
+
+
+
+
+### 域名路由
+- 说明
+```
+
+```
+
+- 常规域名路由
+```php
+Route::get("http://<language:[a-z]+>.xxx.com/user/get","user/get");
+```
+
+- 分组域名路由
+```php
+
+```
+
+
+
+
+
+
+
 
 ## URL参数解析
 
@@ -536,19 +598,11 @@ $url = $hrouter->buildUrL("news/get",["#"=>"add"],['suffix'=>"html"]);
 ```
 
 ## restful规则
+
+- 常规格式
 ```php
 use hehe\core\hrouter\Route;
-
-// 通用格式
-Route::get("<controller:\w+>","<controller>/index");
-Route::get("<controller:\w+>/create","<controller>/create");
-Route::post("<controller:\w+>","<controller>/save");
-Route::get("<controller:\w+>/<id:\d+>","<controller>/read");
-Route::get("<controller:\w+>/<id:\d+>/edit","<controller>/edit");
-Route::put("<controller:\w+>/<id:\d+>","<controller>/update");
-Route::delete("<controller:\w+>/<id:\d+>","<controller>/delete");
-
-// 特定地址格式
+// 指定地址格式
 Route::get("blog","blog/index");
 Route::get("blog/create","blog/create");
 Route::post("blog","blog/save");
@@ -558,21 +612,73 @@ Route::put("blog/<id:\d+>","blog/update");
 Route::delete("blog/<id:\d+>","blog/delete");
 
 ```
+
+- 变量格式
+```php
+use hehe\core\hrouter\Route;
+// 通用格式
+Route::get("<controller:\w+>","<controller>/index");
+Route::get("<controller:\w+>/create","<controller>/create");
+Route::post("<controller:\w+>","<controller>/save");
+Route::get("<controller:\w+>/<id:\d+>","<controller>/read");
+Route::get("<controller:\w+>/<id:\d+>/edit","<controller>/edit");
+Route::put("<controller:\w+>/<id:\d+>","<controller>/update");
+Route::delete("<controller:\w+>/<id:\d+>","<controller>/delete");
+
+```
+- 注解常规格式
+```php
+namespace hrouter\tests\common;
+use hehe\core\hrouter\annotation\Restful;
+/**
+ * @Restful("good")
+ */
+class GoodController
+{
+    public function indexAction(){}
+    public function createAction(){}
+    public function saveAction(){}
+    public function readAction(){}
+    public function editAction(){}
+    public function updateAction(){}
+    public function deleteAction(){}
+}
+
+```
+
+- 注解变量格式
+```php
+namespace hrouter\tests\common;
+use hehe\core\hrouter\annotation\Restful;
+/**
+ * @Restful("<module:\w+>/order")
+ */
+class OrderController
+{
+    public function indexAction(){}
+    public function createAction(){}
+    public function saveAction(){}
+    public function readAction(){}
+    public function editAction(){}
+    public function updateAction(){}
+    public function deleteAction(){}
+}
+
+```
+
 ## 注解路由
 - 说明
 ```
 注解器:hehe\core\hrouter\annotation\Route
-注解类方法:如果"路由规则"以"/"开头，则表示完整的路由规则,如非"/"开头,其路由规则最终会带上类注解“路由规则”
-  如:类路由规则:admin,方法路由规则doadd,则最终的路由规则为:"admin/doadd"
-  如:类路由规则:admin,方法路由规则/config/set,则最终的路由规则为:"/config/set"
+注解类:相当于创建一个分组路由，注解类方法相当于在分组路由注册子路由
 ```
-- 用于类
+- 注解类
 ```php
 namespace hrouter\tests\common;
 use hehe\core\hrouter\annotation\Route;
 /**
  * @Route("admin")
- * 相当于:RouteManager::addRoute("admin<route:.*?>","admin<route>");
+ * 相当于:Route::addRoute("admin<route:.*?>","admin<route>");
  */
 class AdminController
 {
@@ -581,7 +687,7 @@ class AdminController
 }
 ```
 
-- 用于类方法
+- 注解类方法
 ```php
 namespace hrouter\tests\common;
 use hehe\core\hrouter\annotation\Route;
@@ -592,19 +698,21 @@ class AdminController
 
     /**
      * @Route("doadd")
-     * 相当于:RouteManager::addRoute("admin/doadd","admin/add");
+     * 相当于:Route::addRoute("admin/doadd","admin/add");
      */
     public function addAction(){}
 
     /**
-     * 相当于:RouteManager::addRoute("admin/<id:\d+>","admin/get"); 
+     * 相当于:Route::addRoute("admin/<id:\d+>","admin/get")->asSuffix("html"); 
      */
-     #[Route("/admin/<id:\d+>")]
+     #[Route("/admin/<id:\d+>",suffix:"html")]
     public function getAction(){}
     
     /**
      * 
+     * 相当于:Route::addRoute("/admin/dosave","admin/save");  
      */
+     #[Route("/admin/save")]
     public function saveAction(){}
 
 }

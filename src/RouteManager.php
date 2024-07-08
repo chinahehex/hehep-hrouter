@@ -106,7 +106,33 @@ class RouteManager
 
     protected function initRules()
     {
+        $rules = [];
         if (!empty($this->rules)) {
+            $rules = array_merge($rules,$this->rules);
+            $this->rules = [];
+        }
+
+        if (!empty(Route::$rules)) {
+            $rules = array_merge($rules,Route::$rules);
+            Route::$rules = [];
+        }
+
+        foreach ($rules as $rule) {
+            $rule->setRouter($this->getRouter());
+            if ($rule instanceof GroupRule) {
+                $rule->runCallable();
+            } else {
+                $this->getRouter()->addRule($rule);
+            }
+        }
+    }
+
+    protected function initRules1()
+    {
+        if (!empty($this->rules)) {
+            foreach ($this->rules as $rule) {
+
+            }
             $this->getRouter()->addRules($this->rules);
             $this->rules = [];
         }
@@ -123,11 +149,11 @@ class RouteManager
     public function addRoute($uri = '',string $action = '',string $method = '',array $options = []):EasyRule
     {
         $easyRule = static::createRule($uri,$action,$method,$options);
-        $this->registerRule($easyRule);
+        $this->register($easyRule);
         return $easyRule;
     }
 
-    public function registerRule(Rule $rule):void
+    public function register(Rule $rule):void
     {
         $this->rules[] = $rule;
     }
@@ -177,7 +203,7 @@ class RouteManager
     public function addGroup($uri = '',?callable $action = null):GroupRule
     {
         $groupRule = static::createGroup($uri,$action);
-        Route::register($groupRule,$this);
+        $this->register($groupRule);
 
         return $groupRule;
     }
@@ -209,7 +235,7 @@ class RouteManager
 
         /** @var Router $router */
         $router = new $routerClass($router_config);
-        $router->addRules(Route::$rules);
+
         $this->_router = $router;
 
         return $router;
@@ -298,22 +324,12 @@ class RouteManager
      * @param string $method 请求方式
      * @return void
      */
-    public function addRule(array $rule,string $method = ''):void
+    public function addRule(Rule $rule,string $method = ''):void
     {
         $this->addRules([$rule],$method);
     }
 
-    /**
-     * @param $uri
-     * @param string $action
-     * @param string $method
-     * @param array $option
-     * @return Rule|EasyRule
-     */
-    public function register($uri, string $action = '', string $method = '', array $option = [])
-	{
-        return $this->addRoute($uri,$action,$method,$option);
-    }
+
 
     /**
      * 生成路由规则对象
@@ -345,12 +361,15 @@ class RouteManager
     public static function createGroup($uri = '',?callable $callable = null):GroupRule
     {
         if (is_array($uri)) {
+            if (!isset($uri['callable'])) {
+                $uri['callable'] = $callable;
+            }
+
             return new GroupRule($uri);
         } else {
-            $attrs = [];
-            if (is_null($callable)) {
+            if ($uri instanceof \Closure) {
                 $attrs['callable'] = $uri;
-            } else {
+            } else if (is_string($uri)) {
                 $attrs['uri'] = $uri;
                 $attrs['callable'] = $callable;
             }

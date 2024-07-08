@@ -36,12 +36,14 @@ class AnnTest extends TestCase
 
         $routerRequest = $this->hrouter->parseRequest($this->createRequest("admin/1"));
         $params = $routerRequest->getRouteParams();
+
         $this->assertTrue($routerRequest->getRouteUrl() == "admin/get" && $params['id'] == 1);
 
         $url = $this->hrouter->buildUrl('admin/get',['id'=>1]);
         $this->assertTrue($url == "admin/1");
 
         $routerRequest = $this->hrouter->parseRequest($this->createRequest("admin/save"));
+        //var_dump($routerRequest->getRouteUrl());
         $this->assertTrue($routerRequest->getRouteUrl() == "admin/save");
 
         $url = $this->hrouter->buildUrl('admin/save');
@@ -98,6 +100,63 @@ class AnnTest extends TestCase
 
         $url = $this->hrouter->buildUrl('auth/get',['id'=>1]);
         $this->assertTrue($url == "auth/1");
+    }
+
+    public function testGoodRestful()
+    {
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("good","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "good/index");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("good/create","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "good/create");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("good","post"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "good/save");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("good/1","get"));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "good/read" && $params['id'] == 1);
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("good/1/edit","get"));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "good/edit" && $params['id'] == 1);
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("good/1","put"));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "good/update" && $params['id'] == 1);
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("good/1","delete"));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "good/delete" && $params['id'] == 1);
+    }
+
+    public function testOrderRestful()
+    {
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("my/order","get"));
+        var_dump($routerRequest->getRouteUrl());
+        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/index");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("my/order/create","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/create");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("my/order","post"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/save");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("my/order/1","get"));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/read" && $params['id'] == 1);
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("my/order/1/edit","get"));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/edit" && $params['id'] == 1);
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("my/order/1","put"));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/update" && $params['id'] == 1);
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("my/order/1","delete"));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/delete" && $params['id'] == 1);
     }
 
 

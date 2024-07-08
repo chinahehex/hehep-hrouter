@@ -68,7 +68,6 @@ class RuleCollector
         $action_flag = $rule->hasActionFlag();
 
         foreach ($methods as $method) {
-
             if ($rule->getId() !== '') {
                 $this->staticActionRules[$method][$rule->getId()] = $rule;
             }
@@ -83,6 +82,12 @@ class RuleCollector
             // 解析URL缓存
             if (!$uri_flag) {
                 $this->staticUriRules[$method][$rule->getUri()] = $rule;
+
+                // 如果是分组
+                if ($rule instanceof GroupRule) {
+                    $this->variableUriRules[$method][] = $rule;
+                }
+
             } else {
                 $this->variableUriRules[$method][] = $rule;
             }

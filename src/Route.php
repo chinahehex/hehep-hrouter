@@ -1,12 +1,9 @@
 <?php
 namespace hehe\core\hrouter;
 
-
 use hehe\core\hrouter\base\GroupRule;
-use hehe\core\hrouter\base\Router;
 use hehe\core\hrouter\base\Rule;
 use hehe\core\hrouter\base\RuleCollector;
-use hehe\core\hrouter\easy\EasyRouter;
 use hehe\core\hrouter\easy\EasyRule;
 
 class Route
@@ -22,7 +19,7 @@ class Route
      * 当前的分组对象
      * @var GroupRule
      */
-    protected static $currentGroup;
+    public static $currentGroup;
 
     /**
      * 添加路由规则
@@ -39,29 +36,12 @@ class Route
         return $easyRule;
     }
 
-    public static function register($rule,?RouteManager $routeManager = null)
+    public static function register($rule)
     {
-        if ($rule instanceof GroupRule) {
-            if (is_null($routeManager)) {
-                static::$rules[] = $rule;
-            } else {
-                $routeManager->registerRule($rule);
-            }
-
-            $prv_group = static::$currentGroup;
-            static::$currentGroup = $rule;
-            $rule->runCallable();
-            static::$currentGroup = $prv_group;
+        if (!is_null(static::$currentGroup)) {
+            static::$currentGroup->addRule($rule);
         } else {
-            if (!is_null(static::$currentGroup)) {
-                static::$currentGroup->addRule($rule);
-            } else {
-                if (is_null($routeManager)) {
-                    static::$rules[] = $rule;
-                } else {
-                    $routeManager->registerRule($rule);
-                }
-            }
+            static::$rules[] = $rule;
         }
     }
 

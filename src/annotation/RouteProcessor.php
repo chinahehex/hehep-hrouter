@@ -13,6 +13,10 @@ use hehe\core\hrouter\RouteManager;
  */
 class RouteProcessor extends AnnotationProcessor
 {
+    protected $annotationHandlers = [
+        'Restful'=>'handleRestfulAnnotation'
+    ];
+
     /**
      * 路由规则定义列表
      * @var Rule[]
@@ -50,7 +54,7 @@ class RouteProcessor extends AnnotationProcessor
 
     public function handleAnnotationClass($annotation,string $class):void
     {
-        $routeValues = $this->getAttribute($annotation,false);
+        $routeValues = $this->getProperty($annotation,false);
 
         $uri = !empty($routeValues['uri']) ? $routeValues['uri'] : '';
         if (empty($uri)) {
@@ -76,7 +80,7 @@ class RouteProcessor extends AnnotationProcessor
      */
     public function handleAnnotationMethod($annotation,string $class,string $method):void
     {
-        $routeValues = $this->getAttribute($annotation,false);
+        $routeValues = $this->getProperty($annotation,false);
         if (empty($routeValues['action'])) {
             $routeValues['action'] = $this->buildActionName($method);
         }
@@ -89,6 +93,26 @@ class RouteProcessor extends AnnotationProcessor
         } else {
             $this->routeRules[] = $rule;
         }
+    }
+
+    public function handleRestfulAnnotation($annotation,string $class,string $target,string $type)
+    {
+        $routeValues = $this->getProperty($annotation,false);
+        $uri = !empty($routeValues['uri']) ? $routeValues['uri'] : '';
+        if (empty($uri)) {
+            $uri = $this->buildUriName($class);
+        }
+
+        $groupRule = Route::createGroup($routeValues);
+        $groupRule->asPrefix($uri . '/');
+        $groupRule->addRule(Route::createRule("","index",'get'));
+        $groupRule->addRule(Route::createRule("create","create",'get'));
+        $groupRule->addRule(Route::createRule("","save",'post'));
+        $groupRule->addRule(Route::createRule("<id:\d+>","read",'get'));
+        $groupRule->addRule(Route::createRule("<id:\d+>/edit","edit",'get'));
+        $groupRule->addRule(Route::createRule("<id:\d+>","update",'put'));
+        $groupRule->addRule(Route::createRule("<id:\d+>","delete",'delete'));
+        $this->routeRules[] = $groupRule;
     }
 
     public function handleProcessorFinish()

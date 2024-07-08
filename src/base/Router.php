@@ -70,32 +70,41 @@ abstract class Router
 	 * @param string $method 方法
      * @return void
 	 */
-	public function addRules(array $rules = [],string $method = RuleCollector::DEFAULT_RULE_METHOD):void
+	public function addRules(array $rules = [],string $method = ''):void
 	{
-        if (empty($rules)) {
+	    if (empty($rules)) {
             return;
         }
 
+        foreach ($rules as $rule) {
+            $this->addRule($rule,$method);
+        }
+	}
+
+    /**
+     * 添加路由规则
+     *<B>说明：</B>
+     *<pre>
+     *  略
+     *</pre>
+     * @param Rule $rule 路由规则
+     * @param string $method 方法
+     * @return void
+     */
+    public function addRule(Rule $rule,string $method = ''):void
+    {
         if (empty($method)) {
             $method = RuleCollector::DEFAULT_RULE_METHOD;
         }
 
-        foreach ($rules as $rule) {
 
-            $rule->setRouter($this);
-            $rule_methods = $rule->getArrMethod();
-            if (empty($rule_methods)) {
-                $rule_methods[] = $method;
-            }
-
-            if ($rule instanceof GroupRule) {
-                $rule->initGroup();
-                $this->ruleCollector->addRule($rule,$rule_methods);
-            } else {
-                $this->ruleCollector->addRule($rule,$rule_methods);
-            }
+        $rule_methods = $rule->getArrMethod();
+        if (empty($rule_methods)) {
+            $rule_methods[] = $method;
         }
-	}
+
+        $this->ruleCollector->addRule($rule,$rule_methods);
+    }
 
     /**
      * 获取默认域名
@@ -173,7 +182,7 @@ abstract class Router
      * array:['controller/action',['name'=>'1212']], ['控制器/方法',‘参数’]
      *</pre>
      */
-    public function matchUriRules(?RouteRequest $routeRequest = null,?array $rules = [])
+    public function matchUriRules(array $rules = [],?RouteRequest $routeRequest = null)
     {
         $matchResult = false;
         if (!empty($rules)) {
@@ -204,28 +213,23 @@ abstract class Router
      * @param array $params 参数
      * @param array $rules 匹配的规则列表
      * @return array
-     * <pre>
-     * [匹配到的规则,匹配结果]
-     *</pre>
      */
-    public function matchActionRules(string $uri,array $params = [],?array $rules = []):array
+    public function matchActionRules(array $rules = [],string $uri,array $params = [])
     {
 
         $matchResult = false;
-        $matchRule = null;
 
         if (!empty($rules)) {
             foreach ($rules as $rule) {
                 /** @var EasyRule $rule */
                 $matchResult = $rule->parseUrL($uri, $params);
                 if ($matchResult !== false) {
-                    $matchRule = $rule;
                     break;
                 }
             }
         }
 
-        return [$matchRule,$matchResult];
+        return $matchResult;
     }
 
     /**

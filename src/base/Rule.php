@@ -105,6 +105,12 @@ abstract class Rule
     protected $suffix = '';
 
     /**
+     * 是否完全匹配
+     * @var bool
+     */
+    protected $completeMatch = true;
+
+    /**
      * @var Router
      */
     protected $router;
@@ -118,8 +124,7 @@ abstract class Rule
         }
     }
 
-
-    public function setRouter(Router $router)
+    public function setRouter(Router $router):void
     {
         $this->router = $router;
     }
@@ -143,9 +148,16 @@ abstract class Rule
         return $this;
     }
 
-    public function getId()
+    public function getId():string
     {
         return $this->id;
+    }
+
+    public function asCompleteMatch(bool $completeMatch = true):self
+    {
+        $this->completeMatch = $completeMatch;
+
+        return $this;
     }
 
     public function getMethod()
@@ -153,9 +165,16 @@ abstract class Rule
         return $this->method;
     }
 
-    public function asMethod(string $method)
+    public function asMethod(string $method):self
     {
         $this->method = $method;
+
+        return $this;
+    }
+
+    public function asAction(string $action):self
+    {
+        $this->action = $action;
 
         return $this;
     }
@@ -200,13 +219,15 @@ abstract class Rule
         return $this->action;
     }
 
-    public function asOptions(array $options)
+    public function asOptions(array $options):self
     {
         if (!empty($options)) {
             foreach ($options as $name=>$value) {
                 $this->{$name} = $value;
             }
         }
+
+        return $this;
     }
 
     public function getOptions(array $propertys):array

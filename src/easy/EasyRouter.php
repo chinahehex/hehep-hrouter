@@ -37,26 +37,26 @@ class EasyRouter extends Router
         // 执行静态缓存路由
         $staticUriRule = $this->ruleCollector->getStaticUriRule($routeRequest);
         if (!is_null($staticUriRule)) {
-            $matchResult = $this->matchUriRules($routeRequest,[$staticUriRule]);
+            $matchResult = $this->matchUriRules([$staticUriRule],$routeRequest);
         }
 
         // 遍历变量路由
         if ($matchResult === false) {
             // 执行请求方法路由规则
             $rules = $this->ruleCollector->getVariableUriRules($routeRequest->getMethod());
-            $matchResult = $this->matchUriRules($routeRequest,$rules);
+            $matchResult = $this->matchUriRules($rules,$routeRequest);
         }
 
         // 变量全局路由
         if ($matchResult === false) {
             // 执行请求方法路由规则
             $rules = $this->ruleCollector->getVariableUriRules(RuleCollector::ANY_RULE_METHOD);
-            $matchResult = $this->matchUriRules($routeRequest,$rules);
+            $matchResult = $this->matchUriRules($rules,$routeRequest);
         }
 
         $params = [];
         if ($matchResult !== false) {
-            list ($pathinfo, $params) = $matchResult;
+            list ($pathinfo, $params,$matchRule) = $matchResult;
         } else {
             // 匹配不到路由规则
             $pathinfo = $routeRequest->getRouterPathinfo();
@@ -117,23 +117,23 @@ class EasyRouter extends Router
         // 执行静态缓存路由
         $staticActionRule = $this->ruleCollector->getStaticActionRule($uri);
         if (!is_null($staticActionRule)) {
-            list($matchRule,$matchResult) = $this->matchActionRules($staticActionRule->getAction(),$params,[$staticActionRule]);
+            $matchResult = $this->matchActionRules([$staticActionRule],$staticActionRule->getAction(),$params);
         }
 
         // 遍历变量路由
         if ($matchResult === false) {
-            list($matchRule,$matchResult) = $this->matchActionRules($uri,$params,$this->ruleCollector->getVariableActionRules(RuleCollector::GET_RULE_METHOD));
+            $matchResult = $this->matchActionRules($this->ruleCollector->getVariableActionRules(RuleCollector::GET_RULE_METHOD),$uri,$params);
         }
 
         if ($matchResult === false) {
-            list($matchRule,$matchResult) = $this->matchActionRules($uri,$params,$this->ruleCollector->getVariableActionRules(RuleCollector::ANY_RULE_METHOD));
+            $matchResult = $this->matchActionRules($this->ruleCollector->getVariableActionRules(RuleCollector::ANY_RULE_METHOD),$uri,$params);
         }
 
         $url = "";
         if ($matchResult === false) {
             $url = $uri;
         } else {
-            list($url,$params) = $matchResult;
+            list($url,$params,$matchRule) = $matchResult;
         }
 
         // 解析url域名

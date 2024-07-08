@@ -599,26 +599,25 @@ class ExampleTest extends TestCase
             Route::get("add","doadd")->asSuffix("shtml");
         })->asMethod("get")->asPrefix("blog/")->asParams(["id"=>"\d+"])->asSuffix("html");
 
-//        $routerRequest = $this->hrouter->parseRequest($this->createRequest("blog/list","get"));
-//        $this->assertTrue($routerRequest->getRouteUrl() == "blog/list");
-//        $this->assertTrue($this->hrouter->buildUrL("blog/list") == "blog/list.html");
-//
-//        $routerRequest = $this->hrouter->parseRequest($this->createRequest("blog/get/1","get"));
-//        $this->assertTrue($routerRequest->getRouteUrl() == "blog/get",($routerRequest->getRouteParams())['id'] == 1);
-//        $this->assertTrue($this->hrouter->buildUrL("blog/get",["id"=>2]) == "blog/get/2.html");
-//
-//
-//        $routerRequest = $this->hrouter->parseRequest($this->createRequest("blog/add","get"));
-//        $this->assertTrue($routerRequest->getRouteUrl() == "blog/doadd");
-//        $this->assertTrue($this->hrouter->buildUrL("blog/doadd") == "blog/add.shtml");
-//
-//        $routerRequest = $this->hrouter->parseRequest($this->createRequest("blog/bxd","get"));
-//        $this->assertTrue($routerRequest->getRouteUrl() == "blog/bxd");
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("blog/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "blog/list");
+        $this->assertTrue($this->hrouter->buildUrL("blog/list") == "blog/list.html");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("blog/get/1","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "blog/get",($routerRequest->getRouteParams())['id'] == 1);
+        $this->assertTrue($this->hrouter->buildUrL("blog/get",["id"=>2]) == "blog/get/2.html");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("blog/add","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "blog/doadd");
+        $this->assertTrue($this->hrouter->buildUrL("blog/doadd") == "blog/add.shtml");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("blog/bxd","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "blog/bxd");
 
         $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/2","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/get",($routerRequest->getRouteParams())['id'] == 2);
-        var_dump($routerRequest->getRouteUrl());
-        var_dump($routerRequest->getRouteParams());
+
+
     }
 
     public function testGroup3()
@@ -667,6 +666,130 @@ class ExampleTest extends TestCase
         $this->assertTrue($this->hrouter->buildUrL("blog/doadd") == "blog/add.shtml");
     }
 
+    public function testFlagGroup()
+    {
+        Route::addGroup("<module:\w+>/blog",function(){
+            Route::addRoute("list","list");
+            Route::get("get/<id>","get");
+            Route::get("add","doadd")->asSuffix("shtml");
+        })->asMethod("get")
+            ->asPrefix("<module>/blog/")
+            ->asParams(["id"=>"\d+"])
+            ->asSuffix("html")
+        ;
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("content/blog/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/list");
+
+        $this->assertTrue($this->hrouter->buildUrL("content/blog/list") == "content/blog/list.html");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("content/blog/get/1","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/get",($routerRequest->getRouteParams())['id'] == 1);
+
+        $this->assertTrue($this->hrouter->buildUrL("content/blog/get",["id"=>2]) == "content/blog/get/2.html");
+
+
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("content/blog/add","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/doadd");
+        $this->assertTrue($this->hrouter->buildUrL("content/blog/doadd") == "content/blog/add.shtml");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("content/blog/bxd","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/bxd");
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/blog/get/2","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/get",($routerRequest->getRouteParams())['id'] == 2);
+        $this->assertTrue($this->hrouter->buildUrL("content/blog/bxd") == "content/blog/bxd.html");
+
+    }
+
+    public function testGroupMergeRule()
+    {
+        Route::addGroup("<module:\w+>/blog",function(){
+            Route::addRoute("list","list");
+            Route::get("get/<id>","get");
+            Route::get("getx/<id>","getx");
+            Route::get("getb/<id>","getb");
+            Route::get("add","doadd")->asSuffix("shtml");
+        })->asMethod("get")
+            ->asPrefix("<module>/blog/")
+            ->asParams(["id"=>"\d+"])
+            ->asSuffix("html")
+            ->asMergeRule(5);
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("content/blog/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/list");
+
+        $this->assertTrue($this->hrouter->buildUrL("content/blog/list") == "content/blog/list.html");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("content/blog/get/1","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/get",($routerRequest->getRouteParams())['id'] == 1);
+
+        $this->assertTrue($this->hrouter->buildUrL("content/blog/get",["id"=>2]) == "content/blog/get/2.html");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("content/blog/add","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/doadd");
+        $this->assertTrue($this->hrouter->buildUrL("content/blog/doadd") == "content/blog/add.shtml");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("content/blog/bxd","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/bxd");
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/blog/get/2","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/get",($routerRequest->getRouteParams())['id'] == 2);
+        $this->assertTrue($this->hrouter->buildUrL("content/blog/bxd") == "content/blog/bxd.html");
+
+    }
+
+
+    public function testEmptyGroup()
+    {
+        Route::addGroup("blog",function(){
+            Route::get("get/<id>","get");
+        })->asAction("blog")->asPrefix("blog/")->asParams(["id"=>"\d+"]);
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "blog/list");
+        $this->assertTrue($this->hrouter->buildUrL("blog/list") == "blog/list");
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/2","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "blog/get" && ($routerRequest->getRouteParams())["id"] == 2);
+        $this->assertTrue($this->hrouter->buildUrL("blog/get",["id"=>2]) == "blog/get/2");
+    }
+
+    public function testEmptyGroup1()
+    {
+        Route::addGroup("blog",function(){
+            Route::get("get/<id>","get");
+        })->asAction("blog/index")->asPrefix("blog/")->asParams(["id"=>"\d+"]);
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "blog/index/list");
+        $this->assertTrue($this->hrouter->buildUrL("blog/index/list") == "blog/list");
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/2","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "blog/get" && ($routerRequest->getRouteParams())["id"] == 2);
+        $this->assertTrue($this->hrouter->buildUrL("blog/get",["id"=>2]) == "blog/get/2");
+    }
+
+    public function testEmptyGroup2()
+    {
+        Route::addGroup("blog",function(){
+            Route::get("get/<id>","get");
+        })->asAction("/blog/index")->asPrefix("blog/")->asParams(["id"=>"\d+"]);
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "blog/index");
+        $this->assertTrue($this->hrouter->buildUrL("blog/index") == "blog");
+
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "blog/index");
+        $this->assertTrue($this->hrouter->buildUrL("blog/index") == "blog");
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/2","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "blog/get" && ($routerRequest->getRouteParams())["id"] == 2);
+        $this->assertTrue($this->hrouter->buildUrL("blog/get",["id"=>2]) == "blog/get/2");
+    }
 
 
 
