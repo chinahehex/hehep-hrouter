@@ -174,7 +174,7 @@ Route::get("user/add","user/doadd");
 Route::get("<controller:\w+>/<action:\w+>","<controller>/<action>");
 
 ```
-### 变量参数路由
+### 变量路由
 ```php
 use hehe\core\hrouter\Route;
 
@@ -190,7 +190,7 @@ Route::get("user/<action:get|list>","user/<action>");
 
 ```
 
-### 可选变量参数路由
+### 可选变量路由
 - 说明
 ```
 在变量参数表达式中末尾带？问号,标识此变量参数为可选
