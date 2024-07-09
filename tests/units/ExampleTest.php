@@ -90,30 +90,43 @@ class ExampleTest extends TestCase
 
     public function testHostRule()
     {
-        $this->hrouter->addRoute('http://www.hehep.cn/news/<id:\d+>','news/get')->asDomain();
+        $this->hrouter->addRoute('http://www.hehep.cn/news/<id:\d+>','news/get');
 
         $routerRequest = $this->hrouter->parseRequest($this->createRequest("news/1",'','http://www.hehep.cn'));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "news/get" && $params['id'] == '1');
-
         $url = $this->hrouter->buildUrl('news/get',['id'=>2]);
-
         $this->assertTrue($url == "http://www.hehep.cn/news/2");
-
     }
 
     public function testHost1Rule()
     {
-        $this->hrouter->addRoute('http://<module:\w+>.hehep.cn/news/<id:\d+>','<module>/news/get')->asDomain();
-
+        $this->hrouter->addRoute('http://<module:\w+>.hehep.cn/news/<id:\d+>','<module>/news/get');
         $routerRequest = $this->hrouter->parseRequest($this->createRequest("news/1",'','http://content.hehep.cn'));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "content/news/get" && $params['id'] == '1');
-
         $url = $this->hrouter->buildUrl('content/news/get',['id'=>2]);
-
         $this->assertTrue($url == "http://content.hehep.cn/news/2");
+    }
 
+    public function testHost2Rule()
+    {
+        $this->hrouter->addRoute('news/<id:\d+>','<module>/news/get')->asDomain("http://<module:\w+>.hehep.cn");
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("news/1",'','http://content.hehep.cn'));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "content/news/get" && $params['id'] == '1');
+        $url = $this->hrouter->buildUrl('content/news/get',['id'=>2]);
+        $this->assertTrue($url == "http://content.hehep.cn/news/2");
+    }
+
+    public function testHost3Rule()
+    {
+        $this->hrouter->addRoute('news/<id:\d+>','news/get')->asDomain("http://www.hehep.cn");
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("news/1",'','http://www.hehep.cn'));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "news/get" && $params['id'] == '1');
+        $url = $this->hrouter->buildUrl('news/get',['id'=>2]);
+        $this->assertTrue($url == "http://www.hehep.cn/news/2");
     }
 
     public function testHParamRule1()
@@ -378,6 +391,7 @@ class ExampleTest extends TestCase
 
         $routerRequest = $this->hrouter->parseRequest($this->createRequest("adminuser/list"));
         $this->assertTrue($routerRequest->getRouteUrl() == AdminController::class . "@list");
+
     }
 
     public function testSetFlag()
@@ -471,7 +485,6 @@ class ExampleTest extends TestCase
             'id'=>'new_id',
         ]);
 
-        $routerRequest = $this->hrouter->parseRequest($this->createRequest("user/get/1"));
         $url = $this->hrouter->buildUrl('new_id',['id'=>122]);
         $this->assertTrue($url == "user/122");
 
@@ -781,7 +794,6 @@ class ExampleTest extends TestCase
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/index");
         $this->assertTrue($this->hrouter->buildUrL("blog/index") == "blog");
 
-
         $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/index");
         $this->assertTrue($this->hrouter->buildUrL("blog/index") == "blog");
@@ -790,6 +802,92 @@ class ExampleTest extends TestCase
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/get" && ($routerRequest->getRouteParams())["id"] == 2);
         $this->assertTrue($this->hrouter->buildUrL("blog/get",["id"=>2]) == "blog/get/2");
     }
+
+    public function testDomainGroup()
+    {
+        Route::addGroup("http://www.hehex.cn",function(){
+            Route::get("news/list","news/list");
+            Route::get("news/get/<id:\d+>","news/get");
+        });
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/list","get","http://www.hehex.cn"));
+        //var_dump($routerRequest->getRouteUrl());
+        $this->assertTrue($routerRequest->getRouteUrl() == "news/list");
+        $this->assertTrue($this->hrouter->buildUrL("news/list") == "http://www.hehex.cn/news/list");
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/get/2","get","http://www.hehex.cn"));
+        //var_dump($routerRequest->getRouteUrl());
+        $this->assertTrue($routerRequest->getRouteUrl() == "news/get");
+        $this->assertTrue($this->hrouter->buildUrL("news/get",['id'=>2]) == "http://www.hehex.cn/news/get/2");
+
+    }
+
+    public function testDomain1Group()
+    {
+        Route::addGroup("<_ssl:http|https>://www.hehex.cn",function(){
+            Route::get("news/list","news/list");
+            Route::get("news/get/<id:\d+>","news/get");
+        })->asDefaults(['ssl'=>'http']);
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/list","get","http://www.hehex.cn"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "news/list");
+        $this->assertTrue($this->hrouter->buildUrL("news/list") == "http://www.hehex.cn/news/list");
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/get/2","get","http://www.hehex.cn"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "news/get");
+        $this->assertTrue($this->hrouter->buildUrL("news/get",['id'=>2]) == "http://www.hehex.cn/news/get/2");
+    }
+
+    public function testDefaultVar()
+    {
+        Route::get("<language:\w+>/news/list","news/list")
+            ->asDefaults(['language'=>'ch']);
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("en/news/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'en');
+        $this->assertTrue($this->hrouter->buildUrL("news/list") == "ch/news/list");
+
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/news/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'ch');
+
+    }
+
+    public function testDefault1Var()
+    {
+        Route::get("<language:\w+/?>news/list","news/list")
+            ->asDefaults(['language'=>'ch']);
+
+        Route::get("<lang:\w+/?>abc/list","<lang>abc/plist")
+            ->asDefaults(['lang'=>'ch']);
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("en/news/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'en');
+        $this->assertTrue($this->hrouter->buildUrL("news/list") == "news/list");
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/news/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'ch');
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'ch');
+        $this->assertTrue($this->hrouter->buildUrL("news/list",["language"=>'ch']) == "news/list");
+        $this->assertTrue($this->hrouter->buildUrL("news/list",["language"=>'en']) == "en/news/list");
+        $this->assertTrue($this->hrouter->buildUrL("news/list") == "news/list");
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("en/abc/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "en/abc/plist");
+
+        $this->assertTrue($this->hrouter->buildUrL("abc/plist",["lang"=>'en']) == "en/abc/list");
+        $this->assertTrue($this->hrouter->buildUrL("en/abc/plist") == "en/abc/list");
+
+        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/abc/list","get"));
+        $this->assertTrue($routerRequest->getRouteUrl() == "abc/plist");
+
+        $this->assertTrue($this->hrouter->buildUrL("abc/plist",["lang"=>'ch']) == "abc/list");
+        $this->assertTrue($this->hrouter->buildUrL("ch/abc/plist") == "abc/list");
+    }
+
+
 
 
 

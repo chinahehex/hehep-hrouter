@@ -127,17 +127,6 @@ class RouteManager
         }
     }
 
-    protected function initRules1()
-    {
-        if (!empty($this->rules)) {
-            foreach ($this->rules as $rule) {
-
-            }
-            $this->getRouter()->addRules($this->rules);
-            $this->rules = [];
-        }
-    }
-
     /**
      * 添加路由规则
      * @param string $uri
@@ -328,8 +317,6 @@ class RouteManager
     {
         $this->addRules([$rule],$method);
     }
-
-
 
     /**
      * 生成路由规则对象

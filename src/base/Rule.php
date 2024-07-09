@@ -67,7 +67,7 @@ abstract class Rule
     protected $action = "";
 
     /**
-     * 验证范围方法
+     * 请求类型
      *<B>说明：</B>
      *<pre>
      * 略
@@ -76,7 +76,7 @@ abstract class Rule
     protected $method = '';
 
     /**
-     * 规则标识
+     * 路由id
      *<B>说明：</B>
      *<pre>
      * 全局唯一,用于生成URL地址
@@ -85,7 +85,7 @@ abstract class Rule
     protected $id = '';
 
     /**
-     * host 地址
+     * 是否启用域名检测
      *<B>说明：</B>
      *<pre>
      * 略
@@ -95,10 +95,16 @@ abstract class Rule
     protected $domain = false;
 
     /**
+     * http host
+     * @var string
+     */
+    protected $host = '';
+
+    /**
      * 后缀
      *<B>说明：</B>
      *<pre>
-     *
+     * 略
      *</pre>
      * @var string|bool
      */
@@ -129,11 +135,22 @@ abstract class Rule
         $this->router = $router;
     }
 
-    public function asDomain(bool $domain = true):self
+    public function init():void
+    {
+        
+    }
+
+    public function asDomain(string $host = '',bool $domain = true):self
     {
         $this->domain = $domain;
+        $this->host = $host;
 
         return $this;
+    }
+
+    public function getHost()
+    {
+        return $this->host;
     }
 
     public function getDomain()
@@ -197,7 +214,7 @@ abstract class Rule
         return $methods;
     }
 
-    public function asSuffix($suffix = true)
+    public function asSuffix($suffix = true):self
     {
         $this->suffix = $suffix;
 
@@ -209,12 +226,12 @@ abstract class Rule
         return $this->suffix;
     }
 
-    public function getUri()
+    public function getUri():string
     {
         return $this->uri;
     }
 
-    public function getAction()
+    public function getAction():string
     {
         return $this->action;
     }

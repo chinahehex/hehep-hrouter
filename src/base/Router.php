@@ -97,11 +97,12 @@ abstract class Router
             $method = RuleCollector::DEFAULT_RULE_METHOD;
         }
 
-
         $rule_methods = $rule->getArrMethod();
         if (empty($rule_methods)) {
             $rule_methods[] = $method;
         }
+
+        $rule->init();
 
         $this->ruleCollector->addRule($rule,$rule_methods);
     }

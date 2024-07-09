@@ -133,7 +133,6 @@ class AnnTest extends TestCase
     public function testOrderRestful()
     {
         $routerRequest = $this->hrouter->parseRequest($this->createRequest("my/order","get"));
-        var_dump($routerRequest->getRouteUrl());
         $this->assertTrue($routerRequest->getRouteUrl() == "my/order/index");
 
         $routerRequest = $this->hrouter->parseRequest($this->createRequest("my/order/create","get"));

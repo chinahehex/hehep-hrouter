@@ -54,16 +54,12 @@ class EasyRouter extends Router
             $matchResult = $this->matchUriRules($rules,$routeRequest);
         }
 
-        $params = [];
-        $matchRule = null;
         if ($matchResult !== false) {
-            list ($pathinfo, $params,$matchRule) = $matchResult;
+            $routeRequest->setMatchResult($matchResult);
         } else {
             // 匹配不到路由规则
-            $pathinfo = $routeRequest->getRouterPathinfo();
+            $routeRequest->setMatchResult([$routeRequest->getRouterPathinfo(),[],null]);
         }
-
-        $routeRequest->setMatchResult([$pathinfo,$params,$matchRule]);
 
         return $routeRequest;
     }
@@ -113,6 +109,8 @@ class EasyRouter extends Router
             list($uri,$suffix) = explode('.',$uri);
         }
 
+        // 查找域名
+
         $matchResult = false;
 
         // 执行静态缓存路由
@@ -121,20 +119,21 @@ class EasyRouter extends Router
             $matchResult = $this->matchActionRules([$staticActionRule],$staticActionRule->getAction(),$params);
         }
 
-        // 遍历变量路由
+        // 遍历GET请求类型变量路由
         if ($matchResult === false) {
             $matchResult = $this->matchActionRules($this->ruleCollector->getVariableActionRules(RuleCollector::GET_RULE_METHOD),$uri,$params);
         }
 
+        // 变量*请求类型变量路由
         if ($matchResult === false) {
             $matchResult = $this->matchActionRules($this->ruleCollector->getVariableActionRules(RuleCollector::ANY_RULE_METHOD),$uri,$params);
         }
 
         $url = "";
-        if ($matchResult === false) {
-            $url = $uri;
-        } else {
+        if ($matchResult !== false) {
             list($url,$params,$matchRule) = $matchResult;
+        } else {
+            $url = $uri;
         }
 
         // 解析url域名

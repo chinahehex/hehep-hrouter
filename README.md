@@ -159,7 +159,7 @@ $rule = $routeReuqst->getRouteRule();// 获取匹配到的路由规则对象
 基本格式:["uri"=>"<controller:\w+>/<action:\w+>","action"=>"<controller>/<action>","method"=>"get"]
 变量参数:格式<变量名>,<变量名:正则表达式> 或{变量名},{变量名:正则表达式},如<controller:\w+>
 uri:路由规则,即匹配http地址的规则表达式
-action:路由地址,即匹配控制器/操作的表达式，常用于生成url地址
+action:路由地址,即匹配"控制器/操作"的表达式，常用于生成url地址
 method:请求类型，多个请求类型逗号或|隔开
 ```
 
@@ -189,6 +189,8 @@ Route::get("user/<action:get|list>","user/<action>");
 // 正确url地址:user/get,user/list,错误url地址:user/edit
 
 ```
+
+
 
 ### 可选变量路由
 - 说明
@@ -221,7 +223,73 @@ Route::get("<module:\w+/?>news/<action:get|list>","<module>news/<action>");
 
 ```
 
-### 类方法路由
+### 默认变量路由
+- 说明
+```
+提示:带?可选默认变量值不会现在"路由规则","路由地址"里 
+```
+
+- 代码示例
+```php
+use hehe\core\hrouter\RouteManager;
+use hehe\core\hrouter\Route;
+$hrouter = new RouteManager([]);
+
+Route::get("<lang:\w+>/news/list","news/list")
+            ->asDefaults(['lang'=>'ch']);
+
+// 解析pathinfo:ch/news/list,返回:url:news/list,$params:["lang"=>'ch']
+// 解析pathinfo:en/news/list,返回:url:news/list,$params:["lang"=>'en']
+$url = $hrouter->buildUrL("news/list",["lang"=>"ch"]);
+// $url:ch/news/list
+
+// 带?问号
+Route::get("<lang:\w+/?>news/list","news/list")
+            ->asDefaults(['lang'=>'ch']);
+// 解析pathinfo:ch/news/list,返回:url:news/list,$params:["lang"=>'ch']
+// 解析pathinfo:en/news/list,返回:url:news/list,$params:["lang"=>'en']
+// 解析pathinfo:news/list,返回:url:news/list,$params:["lang"=>'ch']
+$url = $hrouter->buildUrL("news/list",["lang"=>"ch"]);
+// $url:news/list
+
+$url = $hrouter->buildUrL("news/list",["lang"=>"en"]);
+// $url:en/news/list
+
+$url = $hrouter->buildUrL("news/list",["lang"=>"ch"]);
+// $url:news/list
+
+
+// 变量带?问号,且action带此变量
+Route::get("<lang:\w+/?>abc/list","<lang>abc/plist")
+    ->asDefaults(['lang'=>'ch']);
+    
+// 解析pathinfo:ch/news/list,返回:url:news/list,$params:["lang"=>'ch']
+// 解析pathinfo:en/news/list,返回:url:news/list,$params:["lang"=>'en']
+// 解析pathinfo:news/list,返回:url:news/list,$params:["lang"=>'ch']
+
+```
+
+### 带域名路由
+```php
+use hehe\core\hrouter\Route;
+
+Route::get('http://www.hehep.cn/news/list','news/list');
+Route::get('news/list','news/list')->asDomain("http://www.hehep.cn");
+
+Route::get('http://user<userid:\d+>.hehep.cn/news/<id:\d+>','news/get');
+Route::get('news/<id:\d+>','news/get')->asDomain("http://user<userid:\d+>.hehep.cn");
+
+$hrouter = new RouteManager();
+
+$uri = $hrouter->buildUrl('news/list');
+// $uri:http://www.hehep.cn/news/list
+
+$uri = $hrouter->buildUrl('news/get',['userid'=>2260,'id'=>1]);
+// $uri:http://user2260.hehep.cn/news/1
+
+```
+
+### 类绑定路由
 - 说明
 ```
 基本格式:完整类路径@方法名
@@ -230,6 +298,7 @@ Route::get("<module:\w+/?>news/<action:get|list>","<module>news/<action>");
 - 示例代码
 ```php
 Route::get("user/add","app/user/AdminController@add");
+Route::get("user/<action:\w+>","app/user/AdminController@<action>");
 ```
 
 ## 路由规则参数
@@ -242,8 +311,8 @@ Route::get("user/add","app/user/AdminController@add");
 `suffix`  | 生成URL地址时是否加入后缀 | asSuffix | asSuffix(),asSuffix("html")
 `method`  | 请求类型 | asMethod | asMethod("get"),asMethod("get|post")
 `id`  | 路由唯一标识(全局唯一),用于快速生成URL地址 | asId | asId("news")
-`uriParams`  | "路由规则"参数集合 | asParams | asParams(["id"=>"\d+"])
-`defaults`  | 默认参数集合 | asDefaults | asDefaults(['language'=>'en']),asDefaults(['page'=>1])
+`uriParams`  | "路由规则"变量集合 | asParams | asParams(["id"=>"\d+"])
+`defaults`  | 默认变量集合 | asDefaults | asDefaults(['language'=>'en']),asDefaults(['page'=>1])
 `completeMatch`  | 是否完全匹配路由规则(正则最后添加$结束符),默认完全匹配 | asCompleteMatch | asCompleteMatch(false)
 
 - 示例代码
@@ -275,44 +344,11 @@ Route::get("<language:\w+/?>news/list","news/list")
     ->asDefaults(['language'=>'ch']);
 ```
 
-### 默认参数路由
-- 说明
-```
-提示:默认参数不出现在"路由地址"里
-```
-
-- 代码示例
-```php
-use hehe\core\hrouter\RouteManager;
-use hehe\core\hrouter\Route;
-
-Route::get("<language:\w+/?>news/list","news/list")
-    ->asDefaults(['language'=>'ch']);
-    
-$hrouter = new RouteManager([]);
-
-// 解析的有效URL地址,ch/news/list,en/news/list,news/list
-$routeRequest = $hrouter->parseRequest(new AppRouteRequest());
-// 获取解析结果
-$action = $routeReuqst->getRouteUrl();//  获取解析后的"路由地址"
-$params = $routeReuqst->getRouteParams();// 获取解析后的额外参数  
-// URL地址: ch/news/list,$action:news/list, $params:["language"=>"ch"]
-// URL地址: en/news/list,$action:news/list, $params:["language"=>"en"]
-// URL地址: news/list,$action:news/list, $params:["language"=>"ch"]
-
-// 生成URL地址
-$url = $hrouter->buildUrL("news/list",["language"=>"ch"]);
-// $url:"news/list"
-
-$url = $hrouter->buildUrL("news/list",["language"=>"en"]);
-// $url:"en/news/list"
-```
-
 ## 分组路由
 - 说明
 ```
-分组路由目的:集中设置参数,提高匹配效率
-分组路由规则:子路由参数优先与组路由参数,即分组设置的参数无法覆盖子路由设置的参数
+分组路由目的:集中统一设置参数,提高匹配效率
+分组路由规则:子路由参数优先于分组路由参数,即分组设置的参数无法覆盖子路由设置的参数
 ```
 
 - 示例代码
@@ -346,7 +382,7 @@ Route::addGroup("blog",function(){
 
 ```
 
-### 带变量参数的分组
+### 带变量分组
 ```php
 use hehe\core\hrouter\Route;
 Route::addGroup("<module:\w+>/blog",function(){
@@ -374,7 +410,7 @@ Route::addGroup("<module:\w+>/blog",function(){
 - 说明
 ```
 合并解析目的:提高匹配效率
-合并规则:只合并相同请求类型的路由
+合并原则:只合并相同请求类型的路由
 可选参数:支持指定合并的条数
 ```
 
@@ -403,7 +439,7 @@ Route::addGroup("blog",function(){
 
 ### 分组参数与子路由参数的同步
 
-参数 | 方法 | 分组路由|常规路由| 同步至常规路由 | 说明
+参数 | 方法 | 分组路由|子路由| 同步至子路由 | 说明
 ----------|------------|:-----:|:-------:|:-----:|------------
 `suffix`  | asSuffix() |&check;| &check;|&check;|统一设置子路由后缀
 `id`  | asId() |&check;| &check;|&check;|统一设置子路由的id前缀,如分组id:admin::,如子路由id:user,最终子路由id:admin::user
@@ -433,9 +469,14 @@ Route::get("http://<language:[a-z]+>.xxx.com/user/get","user/get");
 ### 参数split分隔格式
 - 说明
 ```
-参数解析分隔类属性如下:
-pvar:URL地址参数解析名称,与"路由规则"中URL参数解析名称对应,比如uri:xxx/thread<hvar:(.*)>,pvar:hvar
+基本格式:thread-119781-1.html
+类属性如下:
+pvar:URL地址参数解析名称,与"路由规则"中URL参数解析名称对应,比如uri:xxx/thread<hvar:(.*)>,pvar值为:hvar
+names:参数项名称，默认值，以及顺序定义,如['id','status'=>"0",'type']
+flag:参数项之间的分隔符,默认是中划线-,比如"thread-122-1-1.html"地址中的"122-1-1"
+prefix:参数前缀,默认是中划线-,比如"thread-122-1-1.html"地址中的122前面的中划线-
 mode:参数数量类型,fixed:固定参数,dynamic:动态参数
+
 固定参数:fixed,如设置names=['id','status'=>"0",'type'],
     URL参数格式1,如thread-119781-1-1.html,错误格式thread-119781-1.html
     生成URL格式1:["id"=>122,"type"=>1],得到的URL:xxxx/thread-122-0-1.html
@@ -447,14 +488,9 @@ mode:参数数量类型,fixed:固定参数,dynamic:动态参数
     生成URL格式1:["id"=>122,"type"=>1],得到的URL:xxxx/thread-122-0-1.html
     生成URL格式2:["id"=>122],得到的URL:xxxx/thread-122-0.html
     生成URL格式3:["id"=>122,"status"=>1,"type"=>1],得到的URL:xxxx/thread-122-1-1.html
-        
-names:参数项名称，默认值，以及顺序定义,如['id','status'=>"0",'type']
-flag:参数项之间的分隔符,默认是中划线-,比如"thread-122-1-1.html"地址中的"122-1-1"
-prefix:参数前缀,默认是中划线-,比如"thread-122-1-1.html"地址中的122前面的中划线-
-
 ```
 
-- 示例代码
+- 动态参数模式
 ```php
 use hehe\core\hrouter\Route;
 
@@ -476,7 +512,12 @@ Route::get([
 // 生成URL:["id"=>122,"type"=>1],得到的URL:xxx/thread-122-0-1.html
 // 生成URL:["id"=>122],得到的URL:xxx/thread-122-0.html
 
-// 固定参数类型
+```
+
+- 固定参数模式
+```php
+use hehe\core\hrouter\Route;
+
 Route::get([
     'uri'=>'<controller:\w+>/<action:\w+>/thread<param:.*>',
     'action'=>'<controller>/<action>',
@@ -500,7 +541,7 @@ Route::get([
 - 说明
 ```
 基本格式:名称/值1/名称/值2/名称/值3，如:news/get/id/1/status/1
-参数解析类属性如下:
+属性如下:
 valueSplit:参数名与值的分隔符,默认"/",如id/1
 paramSplit:参数与参数的分隔符,默认"/",如id/1/status/1,id-1/status-1
 prefix:参数前缀,默认""
@@ -517,6 +558,8 @@ Route::get([
     'pvar'=>'param',
     'prule'=>[
         'class'=>'pathinfo',// 参数解析器类路径
+//        'valueSplit'=>'/',
+//        'paramSplit'=>'/',
         // 所有参数的默认值以及顺序
         'names'=>['id','status','type'],
     ]
@@ -532,7 +575,7 @@ Route::get([
 
 ```
 
-## Url生成
+## Url地址生成
 ### 常规生成URL
 ```php
 use hehe\core\hrouter\RouteManager;
@@ -574,6 +617,7 @@ $url = $hrouter->buildUrL("news_get",["id"=>2]);
 ```php
 use hehe\core\hrouter\RouteManager;
 use hehe\core\hrouter\Route;
+
 Route::get("news/<id:\d+>","news/get")->asSuffix("html");
 Route::get("news/list","news/get")->asSuffix();
 
@@ -600,8 +644,8 @@ $url = $hrouter->buildUrL("news/list",[],['suffix'=>"shtml"]);
 use hehe\core\hrouter\RouteManager;
 
 $hrouter = new RouteManager();
-$url = $hrouter->buildUrL("news/get",["#"=>"add"],['suffix'=>"html"]);
-// $url:news/get.html#add
+$url = $hrouter->buildUrL("news/get",["#"=>"add",'id'=>3],['suffix'=>"html"]);
+// $url:news/get.html?id=3#add
 
 ```
 

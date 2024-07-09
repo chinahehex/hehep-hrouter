@@ -82,12 +82,10 @@ class RuleCollector
             // 解析URL缓存
             if (!$uri_flag) {
                 $this->staticUriRules[$method][$rule->getUri()] = $rule;
-
                 // 如果是分组
                 if ($rule instanceof GroupRule) {
                     $this->variableUriRules[$method][] = $rule;
                 }
-
             } else {
                 $this->variableUriRules[$method][] = $rule;
             }
@@ -133,17 +131,25 @@ class RuleCollector
         return $rules;
     }
 
-
     public function getStaticUriRule(RouteRequest $routeRequest)
     {
 
-        $uri = $routeRequest->getPathinfo();
         $method = $routeRequest->getMethod();
 
+        $uri = $routeRequest->getPathinfo();
+        // 非域名也检查一次
         if (isset($this->staticUriRules[$method][$uri])) {
             return $this->staticUriRules[$method][$uri];
         } else if (isset($this->staticUriRules[self::ANY_RULE_METHOD][$uri])) {
             return $this->staticUriRules[self::ANY_RULE_METHOD][$uri];
+        }
+
+        $fullUrl = $routeRequest->getFullUrl();
+        // 带域名的检查一次
+        if (isset($this->staticUriRules[$method][$fullUrl])) {
+            return $this->staticUriRules[$method][$fullUrl];
+        } else if (isset($this->staticUriRules[self::ANY_RULE_METHOD][$fullUrl])) {
+            return $this->staticUriRules[self::ANY_RULE_METHOD][$fullUrl];
         }
 
         return null;

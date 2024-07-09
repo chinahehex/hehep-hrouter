@@ -15,11 +15,11 @@ class EasyRule extends Rule
 {
     // 匹配 pathinfo 正则表达式/
     const PATHINFO_PARAMS_REGEX = '/<(\w+):?([^>]+)?>|\\{(\w+):?([^\\}]+)?\\}/';
-    const PATHINFO_PARAMS_REGEX1 = '/<(\w+):?([^>]+)?>/';
-    const PATHINFO_PARAMS_REGEX2 = '/\\{(\w+):?([^\\}]+)?\\}/';
+    const PATHINFO_PARAMS_REGEX1 = '/<_?(\w+):?([^>]+)?>/';
+    const PATHINFO_PARAMS_REGEX2 = '/\\{_?(\w+):?([^\\}]+)?\\}/';
 
     // 匹配action 正则表达式
-    const ACTION_PARAMS_REGEX = '/<(\w+)>|\\{(\w+)\\}/';
+    const ACTION_PARAMS_REGEX = '/<_?(\w+)>|\\{(\w+)\\}/';
 
     /**
      * url 正则表达式
@@ -99,6 +99,20 @@ class EasyRule extends Rule
 
     protected $_init_status = false;
 
+
+    /**
+     * 私有变量标签
+     * @var string
+     */
+    protected $privateVarFlag = '_';
+
+    /**
+     * 私有变量集合
+     * 私有变量不进入URL参数
+     * @var array
+     */
+    protected $privateVars = [];
+
     public function __construct(array $attrs = [])
     {
         parent::__construct($attrs);
@@ -112,7 +126,7 @@ class EasyRule extends Rule
      * 略
      *</pre>
      */
-    public function init()
+    public function init():void
     {
         if ($this->_init_status) {
             return ;
@@ -120,11 +134,13 @@ class EasyRule extends Rule
 
         $this->_init_status = true;
 
-        // 判断uri 是否包含域名
-        if ($this->domain === false) {
-            if (strpos($this->uri, '://') !== false) {
-                $this->domain = true;
-            }
+        if (strpos($this->uri, '://') !== false) {
+            list($host,$pathinfo) = explode('://',$this->uri);
+            $this->host = $host;
+            $this->domain = true;
+        } else if ($this->domain === true) {
+            $this->host = rtrim($this->host, '/');
+            $this->uri = rtrim($this->host . '/' . $this->uri, '/');
         }
 
         // 判断action 是否类路径
@@ -241,6 +257,11 @@ class EasyRule extends Rule
                 } else if (substr($pattern,-1) === '?') {
                     $pattern = substr($pattern,0,strlen($pattern) - 1);
                     $optional_status = true;
+                }
+
+                if (substr($name,0,1) === '_') {
+                    $name = substr($name,1);
+                    $this->privateVars[$name] = $name;
                 }
 
                 if (isset($this->uriParams[$name])) {
@@ -412,7 +433,10 @@ class EasyRule extends Rule
 
                 unset($params[$name]);
             } elseif (isset($this->uriParams[$name])) {
-                $params[$name] = $value;
+                // 如果是私有参数，则不出现在params 中
+                if (!isset($this->privateVars[$name])) {
+                    $params[$name] = $value;
+                }
             }
         }
 
@@ -471,7 +495,11 @@ class EasyRule extends Rule
                 $replaceParams[$flag_name] =  $this->getParamRule()->format($urlParams);
             } else if (isset($urlParams[$name])) {
                 if (isset($this->defaults[$name]) && strcmp($this->defaults[$name],$urlParams[$name]) === 0) {
-                    $replaceParams[$flag_name] =  "";
+                    if (is_array($value)) {
+                        $replaceParams[$flag_name] =  "";
+                    } else {
+                        $replaceParams[$flag_name] = $urlParams[$name];
+                    }
                 } else {
                     if (is_array($value)) {
                         $replaceParams[$flag_name] = str_replace($flag_name,$urlParams[$name],$value['name']);

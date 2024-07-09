@@ -47,7 +47,7 @@ class GroupRule extends EasyRule
     protected $variableActionRules = [];
 
     protected $_hroute = false;
-    protected $_hroute_name = '__hroute__';
+    protected $_hroute_name = '_hroute';
 
     /**
      * 合并路由缓存
@@ -109,7 +109,7 @@ class GroupRule extends EasyRule
      */
     protected function syncRules()
     {
-        $rule_attributes = ["uri","action","method","suffix","domain","uriParams","id"];
+        $rule_attributes = ["uri","action","method","suffix","domain","uriParams","id","defaults"];
         // 开始同步分组配置给rule
         if (count($this->subRules) > 0) {
             $variableMethods = [];
@@ -141,6 +141,10 @@ class GroupRule extends EasyRule
                     } else if ($name === 'uriParams') {
                         if (!empty($this->uriParams)) {
                             $value = array_merge($this->uriParams,$value);
+                        }
+                    } else if ($name === 'defaults') {
+                        if (!empty($this->defaults)) {
+                            $value = array_merge($this->defaults,$value);
                         }
                     } else if ($name === 'id') {
                         if (!empty($value) && !empty($this->id)) {
@@ -386,9 +390,6 @@ class GroupRule extends EasyRule
         }
 
         if ($matchResult === false) {
-            if ($this->_hroute) {
-                unset($matches[$this->_hroute_name]);
-            }
             $matchResult = $this->parseUriMatches($matches,$routeRequest);
         }
 
