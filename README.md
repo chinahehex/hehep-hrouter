@@ -354,6 +354,17 @@ Route::get("user/add","app/user/AdminController@add");
 Route::get("user/<action:\w+>","app/user/AdminController@<action>");
 ```
 
+### 常用变量表达式
+
+表达式 | 说明 | 示例
+----------|-------------|------------
+`\w+`  | 由数字、26个英文字母或者下划线组成的字符串 | 'user/<action:\w+>'
+`\d+`  | 非负整数（正整数 + 0） | 'user/<id:\d+>'
+`[a-z]+`  | 26个小写字母 | 'http://<lang:[z-z]+>.xxx.cn'
+`.+`  | 任意字符 | 'user/get<param:.+>'
+
+
+
 ## 路由规则参数
 
 - 路由参数集合
@@ -367,6 +378,7 @@ Route::get("user/<action:\w+>","app/user/AdminController@<action>");
 `uriParams`  | "路由规则"变量集合 | asParams | asParams(["id"=>"\d+"])
 `defaults`  | 默认变量集合 | asDefaults | asDefaults(['lang'=>'en'])
 `completeMatch`  | 是否完全匹配路由规则,默认完全匹配 | asCompleteMatch | asCompleteMatch(false)
+`prule`  | Url参数配置规则 | asParamsRule | asParamsRule(['pvar'=>'params','class'=>'xxx'])
 
 - 示例代码
 ```php
@@ -500,7 +512,7 @@ Route::addGroup("blog",function(){
 `mergeRule`  | asMergeRule(5) |&check;| &cross;|&cross;;|路由规则合并成一条正则表达式进行验证，可以指定一次合并N条
 
 
-### 域名路由
+## 域名路由
 
 - 常规域名路由
 ```php
@@ -644,10 +656,10 @@ Route::get([
 // 或
 Route::get('<controller:\w+>/<action:\w+>/thread<param:.*>','<controller>/<action>')
         ->asParamsRule([
-            'pvar'=>'param',
+          'pvar'=>'param',
 //        'valueSplit'=>'/',
 //        'paramSplit'=>'/',
-            'names'=>['id','status','type']
+           'names'=>['id','status','type']
          ]);
 
 // URL地址:news/get/id/122/status/1/type/1.html,$action::news/get,$params:["id"=>122,"status"=>1,"type"=>1]
@@ -687,14 +699,14 @@ $url = $hrouter->buildUrL("news/search",["catid"=>122,"status"=>1]);
 
 ```
 
-### 路由标识生成URL
+### 由路由标识生成URL
 ```php
 use hehe\core\hrouter\RouteManager;
 use hehe\core\hrouter\Route;
-Route::get("news/<id:\d+>","news/get")->asId("news_get");
+Route::get("news/<id:\d+>","news/get")->asId("news_id");
 
 $hrouter = new RouteManager();
-$url = $hrouter->buildUrL("news_get",["id"=>2]);
+$url = $hrouter->buildUrL("news_id",["id"=>2]);
 // $url:news/2
 
 ```
@@ -711,30 +723,34 @@ $url = $hrouter->buildUrL("news/get",["id"=>2]);
 // $url:news/2.html
 
 $url = $hrouter->buildUrL("news/get.shtml",["id"=>2]);
-// $url:news/2.htmls
+// $url:news/2.shtml
 
 $url = $hrouter->buildUrL("news/get",["id"=>2],["suffix"=>"shtml"]);
-// $url:news/2.htmls
+// $url:news/2.shtml
 
 $url = $hrouter->buildUrL("news/list");
 // $url:news/list.html
 
 $url = $hrouter->buildUrL("news/list",[],['suffix'=>"shtml"]);
-// $url:news/list.htmls
+// $url:news/list.shtml
 
 ```
 
 ### 生成带域名URL
 ```php
 use hehe\core\hrouter\RouteManager;
+use hehe\core\hrouter\Route;
+
+Route::get("http://<language:[a-z]+>.xxx.com/user/get","news/get")
+    ->asDefaults(["language"=>'ch']);
 
 $hrouter = new RouteManager();
-$url = $hrouter->buildUrL("news/get",["#"=>"add",'id'=>3],['suffix'=>"html"]);
-// $url:news/get.html?id=3#add
+$url = $hrouter->buildUrL("news/get");
+// $url:http://ch.xxx.com/user/get
 
 ```
 
-### 生成锚点
+### 生成带锚点URL
 ```php
 use hehe\core\hrouter\RouteManager;
 

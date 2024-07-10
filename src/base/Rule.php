@@ -230,6 +230,51 @@ class Rule
         }
     }
 
+    /**
+     *
+     *<B>说明：</B>
+     *<pre>
+     * 略
+     *</pre>
+     */
+    public function init():void
+    {
+        if ($this->_init_status) {
+            return ;
+        }
+
+        $this->_init_status = true;
+
+        if (strpos($this->uri, '://') !== false) {
+            list($host,$pathinfo) = explode('://',$this->uri);
+            $this->host = $host;
+            $this->domain = true;
+        } else if ($this->domain === true) {
+            $this->host = rtrim($this->host, '/');
+            $this->uri = rtrim($this->host . '/' . $this->uri, '/');
+        }
+
+        // 判断action 是否类路径
+        if (strpos($this->action,"@") !== false) {
+            $this->mode = self::PARSING_ONLY;
+        }
+
+        // URL参数解析
+        $this->buildPrule();
+
+        $this->buildUri();
+        $this->buildAction();
+    }
+
+    protected function buildPrule(array $prule):void
+    {
+        if (!empty($prule)) {
+            $this->pvar = $prule['pvar'];
+            unset($prule['pvar']);
+            $this->prule = $prule;
+        }
+    }
+
     public function setRouter(Router $router):void
     {
         $this->router = $router;
@@ -335,7 +380,11 @@ class Rule
     {
         if (!empty($options)) {
             foreach ($options as $name=>$value) {
-                $this->{$name} = $value;
+                if ($name === 'prule') {
+                    $this->asParamsRule($value);
+                } else {
+                    $this->{$name} = $value;
+                }
             }
         }
 
@@ -354,43 +403,7 @@ class Rule
         return $attrs;
     }
 
-    /**
-     *
-     *<B>说明：</B>
-     *<pre>
-     * 略
-     *</pre>
-     */
-    public function init():void
-    {
-        if ($this->_init_status) {
-            return ;
-        }
 
-        $this->_init_status = true;
-
-        if (strpos($this->uri, '://') !== false) {
-            list($host,$pathinfo) = explode('://',$this->uri);
-            $this->host = $host;
-            $this->domain = true;
-        } else if ($this->domain === true) {
-            $this->host = rtrim($this->host, '/');
-            $this->uri = rtrim($this->host . '/' . $this->uri, '/');
-        }
-
-        // 判断action 是否类路径
-        if (strpos($this->action,"@") !== false) {
-            $this->mode = self::PARSING_ONLY;
-        }
-
-        // URL参数解析
-        if (!empty($this->prule)) {
-            $this->pvar = $this->prule['pvar'];
-        }
-
-        $this->buildUri();
-        $this->buildAction();
-    }
 
     /**
      * 验证路由地址(action)是否有变量
@@ -460,12 +473,7 @@ class Rule
 
     public function asParamsRule(array $prule = []):self
     {
-        if (isset($prule['pvar'])) {
-            $this->pvar = $prule['pvar'];
-            unset($prule['pvar']);
-        }
-
-        $this->prule = $prule;
+        $this->buildPrule($prule);
 
         return $this;
     }
