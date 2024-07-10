@@ -1,22 +1,12 @@
 <?php
-namespace hehe\core\hrouter\base;
+namespace hehe\core\hrouter\fast;
 
-use hehe\core\hrouter\easy\EasyRule;
+use hehe\core\hrouter\base\RouteRequest;
+use hehe\core\hrouter\base\Rule;
+use hehe\core\hrouter\Route;
 
 class RuleCollector
 {
-    const GET_RULE_METHOD = 'get';
-    const POST_RULE_METHOD = 'post';
-    const PUT_RULE_METHOD = 'put';
-    const DELETE_RULE_METHOD = 'delete';
-    const PATCH_RULE_METHOD = 'patch';
-    const HEAD_RULE_METHOD = 'head';
-    const ANY_RULE_METHOD = '*';
-    const DEFAULT_RULE_METHOD = '*';
-    const MAP_RULE_METHOD = 'action';
-    const REQUEST_RULE_METHOD = 'request';
-    const DOMAIN_RULE_METHOD = 'domain';
-
     public $rules = [];
 
     /**
@@ -47,7 +37,7 @@ class RuleCollector
 
     /**
      * 检测路由有效性
-     * @param EasyRule[] $rules
+     * @param Rule[] $rules
      * @param RouteRequest $routeRequest
      */
     public function checkRules(array $rules,string $method):array
@@ -94,12 +84,12 @@ class RuleCollector
 
     }
 
-    public function getStaticActionRule(string $action):?EasyRule
+    public function getStaticActionRule(string $action):?Rule
     {
-        if (isset($this->staticActionRules[self::GET_RULE_METHOD][$action])) {
-            return $this->staticActionRules[self::GET_RULE_METHOD][$action];
-        } else if (isset($this->staticActionRules[self::ANY_RULE_METHOD][$action])) {
-            return $this->staticActionRules[self::ANY_RULE_METHOD][$action];
+        if (isset($this->staticActionRules[Route::GET_RULE_METHOD][$action])) {
+            return $this->staticActionRules[Route::GET_RULE_METHOD][$action];
+        } else if (isset($this->staticActionRules[Route::ANY_RULE_METHOD][$action])) {
+            return $this->staticActionRules[Route::ANY_RULE_METHOD][$action];
         }
 
         return null;
@@ -135,21 +125,20 @@ class RuleCollector
     {
 
         $method = $routeRequest->getMethod();
-
         $uri = $routeRequest->getPathinfo();
         // 非域名也检查一次
         if (isset($this->staticUriRules[$method][$uri])) {
             return $this->staticUriRules[$method][$uri];
-        } else if (isset($this->staticUriRules[self::ANY_RULE_METHOD][$uri])) {
-            return $this->staticUriRules[self::ANY_RULE_METHOD][$uri];
+        } else if (isset($this->staticUriRules[Route::ANY_RULE_METHOD][$uri])) {
+            return $this->staticUriRules[Route::ANY_RULE_METHOD][$uri];
         }
 
         $fullUrl = $routeRequest->getFullUrl();
         // 带域名的检查一次
         if (isset($this->staticUriRules[$method][$fullUrl])) {
             return $this->staticUriRules[$method][$fullUrl];
-        } else if (isset($this->staticUriRules[self::ANY_RULE_METHOD][$fullUrl])) {
-            return $this->staticUriRules[self::ANY_RULE_METHOD][$fullUrl];
+        } else if (isset($this->staticUriRules[Route::ANY_RULE_METHOD][$fullUrl])) {
+            return $this->staticUriRules[Route::ANY_RULE_METHOD][$fullUrl];
         }
 
         return null;

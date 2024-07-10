@@ -5,9 +5,7 @@ use hehe\core\hrouter\base\GroupRule;
 use hehe\core\hrouter\base\Router;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
-use hehe\core\hrouter\base\RuleCollector;
-use hehe\core\hrouter\easy\EasyRouter;
-use hehe\core\hrouter\easy\EasyRule;
+use hehe\core\hrouter\fast\FastRouter;
 
 /**
  * 路由管理类
@@ -36,7 +34,7 @@ class RouteManager
      * 默认路由
      * @var string
      */
-    protected $defaultRouter = 'EasyRouter';
+    protected $defaultRouter = 'FastRouter';
 
     /**
      * 路由解析器定义
@@ -48,7 +46,7 @@ class RouteManager
      */
     public $customRouter = [
         // 路由类
-        'class'=>EasyRouter::class,
+        'class'=>FastRouter::class,
         // url 是否加入上后缀
         'suffix'=>false,// url 地址后缀
         // url 是否加入域名
@@ -133,13 +131,14 @@ class RouteManager
      * @param string $action
      * @param string $method
      * @param array $options
-     * @return EasyRule
+     * @return Rule
      */
-    public function addRoute($uri = '',string $action = '',string $method = '',array $options = []):EasyRule
+    public function addRoute($uri = '',string $action = '',string $method = '',array $options = []):Rule
     {
-        $easyRule = static::createRule($uri,$action,$method,$options);
-        $this->register($easyRule);
-        return $easyRule;
+        $rule = static::createRule($uri,$action,$method,$options);
+        $this->register($rule);
+
+        return $rule;
     }
 
     public function register(Rule $rule):void
@@ -149,37 +148,37 @@ class RouteManager
 
     public function get(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollector::GET_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::GET_RULE_METHOD,$options);
     }
 
     public function post(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollector::POST_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::POST_RULE_METHOD,$options);
     }
 
     public function put(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollector::PUT_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::PUT_RULE_METHOD,$options);
     }
 
     public function patch(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollector::PATCH_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::PATCH_RULE_METHOD,$options);
     }
 
     public function delete(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollector::DELETE_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::DELETE_RULE_METHOD,$options);
     }
 
     public function head(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollector::HEAD_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::HEAD_RULE_METHOD,$options);
     }
 
     public function any(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,RuleCollector::ANY_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::ANY_RULE_METHOD,$options);
     }
 
 
@@ -280,7 +279,7 @@ class RouteManager
         if (isset($this->routerRequest['class']) && strpos($this->routerRequest['class'],'\\') !== false) {// 采用命名空间
             $routerRequestClass = $this->routerRequest['class'];
         } else {
-            $routerRequestClass = __NAMESPACE__ . '\\request\\' . $this->routerRequest['class'];
+            $routerRequestClass = __NAMESPACE__ . '\\requests\\' . $this->routerRequest['class'];
         }
 
         $this->_routerRequestClass = $routerRequestClass;
@@ -328,7 +327,7 @@ class RouteManager
      * @param string $action 正则规则
      * @param string $method 正则规则
      * @param array $options 正则规则
-     * @return EasyRule
+     * @return Rule
      */
     public static function createRule($uri = '' ,string $action = '',string $method = '',array $options = []):Rule
     {
@@ -342,7 +341,7 @@ class RouteManager
             $ruleConfig = $uri;
         }
 
-        return new EasyRule($ruleConfig);
+        return new Rule($ruleConfig);
     }
 
     public static function createGroup($uri = '',?callable $callable = null):GroupRule

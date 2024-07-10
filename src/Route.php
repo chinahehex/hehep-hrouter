@@ -3,11 +3,19 @@ namespace hehe\core\hrouter;
 
 use hehe\core\hrouter\base\GroupRule;
 use hehe\core\hrouter\base\Rule;
-use hehe\core\hrouter\base\RuleCollector;
-use hehe\core\hrouter\easy\EasyRule;
+
 
 class Route
 {
+    const GET_RULE_METHOD = 'get';
+    const POST_RULE_METHOD = 'post';
+    const PUT_RULE_METHOD = 'put';
+    const DELETE_RULE_METHOD = 'delete';
+    const PATCH_RULE_METHOD = 'patch';
+    const HEAD_RULE_METHOD = 'head';
+    const ANY_RULE_METHOD = '*';
+    const DEFAULT_RULE_METHOD = '*';
+
     /**
      * 路由规则定义
      * @var array
@@ -27,13 +35,14 @@ class Route
      * @param string $action
      * @param string $method
      * @param array $options
-     * @return EasyRule
+     * @return Rule
      */
-    public static function addRoute(string $uri = '',string $action = '',string $method = RuleCollector::ANY_RULE_METHOD,array $options = []):EasyRule
+    public static function addRoute(string $uri = '',string $action = '',string $method = self::ANY_RULE_METHOD,array $options = []):Rule
     {
-        $easyRule = RouteManager::createRule($uri,$action,$method,$options);
-        static::register($easyRule);
-        return $easyRule;
+        $rule = RouteManager::createRule($uri,$action,$method,$options);
+        static::register($rule);
+
+        return $rule;
     }
 
     public static function register($rule)
@@ -47,37 +56,37 @@ class Route
 
     public static function get(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,RuleCollector::GET_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::GET_RULE_METHOD,$options);
     }
 
     public static function post(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,RuleCollector::POST_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::POST_RULE_METHOD,$options);
     }
 
     public static function put(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,RuleCollector::PUT_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::PUT_RULE_METHOD,$options);
     }
 
     public static function patch(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,RuleCollector::PATCH_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::PATCH_RULE_METHOD,$options);
     }
 
     public static function delete(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,RuleCollector::DELETE_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::DELETE_RULE_METHOD,$options);
     }
 
     public static function head(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,RuleCollector::HEAD_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::HEAD_RULE_METHOD,$options);
     }
 
     public static function any(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,RuleCollector::ANY_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::ANY_RULE_METHOD,$options);
     }
 
     /**
@@ -121,7 +130,7 @@ class Route
      * @param string $action 正则规则
      * @param string $method 正则规则
      * @param array $options 正则规则
-     * @return EasyRule
+     * @return Rule
      */
     public static function createRule($uri = '' ,string $action = '',string $method = '',array $options = []):Rule
     {

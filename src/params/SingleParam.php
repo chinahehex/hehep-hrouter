@@ -1,7 +1,7 @@
 <?php
-namespace hehe\core\hrouter\easy\params;
+namespace hehe\core\hrouter\params;
 
-use hehe\core\hrouter\easy\ParamRule;
+use hehe\core\hrouter\base\ParamRule;
 
 /**
  * 分隔符形式参数
@@ -16,14 +16,6 @@ use hehe\core\hrouter\easy\ParamRule;
  *    'site/<controller:\w+>/<action:\w+>' => 'site/<controller>/<action>',
 'http://<user_id:\w+>.digpage.com/post/<id:\d+>.html' => 'login/index',
  * ]
- *</pre>
- *<B>日志：</B>
- *<pre>
- *  略
- *</pre>
- *<B>注意事项：</B>
- *<pre>
- *  略
  *</pre>
  */
 class SingleParam extends ParamRule
@@ -139,7 +131,7 @@ class SingleParam extends ParamRule
         return $var;
     }
 
-    public function format(array &$params)
+    public function build(array &$params)
     {
         $urlParams = [];
         foreach ($params as $name=>$value) {

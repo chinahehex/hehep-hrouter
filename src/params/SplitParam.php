@@ -1,7 +1,7 @@
 <?php
-namespace hehe\core\hrouter\easy\params;
+namespace hehe\core\hrouter\params;
 
-use hehe\core\hrouter\easy\ParamRule;
+use hehe\core\hrouter\base\ParamRule;
 
 /**
  * 分隔符形式参数解析类
@@ -53,7 +53,7 @@ class SplitParam extends ParamRule
         return $vars;
     }
 
-    public function format(array &$params)
+    public function build(array &$params)
     {
 
         $vars = [];

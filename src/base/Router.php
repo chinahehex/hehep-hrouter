@@ -1,9 +1,6 @@
 <?php
 namespace hehe\core\hrouter\base;
 
-use hehe\core\hrouter\easy\EasyRouter;
-use hehe\core\hrouter\easy\EasyRule;
-use hehe\core\hrouter\RouteManager;
 
 /**
  * 路由基类
@@ -35,10 +32,6 @@ abstract class Router
      */
     protected $domain = false;
 
-    /**
-     * @var RuleCollector
-     */
-    public $ruleCollector;
 
 	/**
 	 * 构造方法
@@ -55,9 +48,6 @@ abstract class Router
                 $this->{$name} = $value;
             }
         }
-
-        $this->ruleCollector = new RuleCollector();
-
 	}
 
 	/**
@@ -82,38 +72,13 @@ abstract class Router
 	}
 
     /**
-     * 添加路由规则
-     *<B>说明：</B>
-     *<pre>
-     *  略
-     *</pre>
-     * @param Rule $rule 路由规则
-     * @param string $method 方法
-     * @return void
-     */
-    public function addRule(Rule $rule,string $method = ''):void
-    {
-        if (empty($method)) {
-            $method = RuleCollector::DEFAULT_RULE_METHOD;
-        }
-
-        $rule_methods = $rule->getArrMethod();
-        if (empty($rule_methods)) {
-            $rule_methods[] = $method;
-        }
-
-        $rule->init();
-
-        $this->ruleCollector->addRule($rule,$rule_methods);
-    }
-
-    /**
      * 获取默认域名
      *<B>说明：</B>
      *<pre>
      *  略
      *</pre>
      * @param array $options
+     * @param ?Rule $rule
      * @return string
      **/
     protected function getDomain(array $options = [],?Rule $rule = null):string
@@ -122,7 +87,7 @@ abstract class Router
         if (isset($options['domain'])) {
             $domain = $options['domain'];
         } else if (!is_null($rule)) {
-            $domain = $rule->getDomain();
+            $domain = $rule->getHost();
         }
 
         if (empty($domain)) {
@@ -140,6 +105,7 @@ abstract class Router
      *</pre>
      * @param string $uri
      * @param array $options
+     * @param ?Rule $rule
      * @return string
      **/
     protected function getSuffix(string $uri,array $options = [],?Rule $rule = null):string
@@ -175,13 +141,9 @@ abstract class Router
      *<pre>
      * 略
      *</pre>
-     * @param ?RouteRequest $routeRequest 控制器/方法
      * @param Rule[] $rules 路由规则对象
+     * @param ?RouteRequest $routeRequest 控制器/方法
      * @return boolean|array
-     * <pre>
-     * boolean: false 未找到匹配路由
-     * array:['controller/action',['name'=>'1212']], ['控制器/方法',‘参数’]
-     *</pre>
      */
     public function matchUriRules(array $rules = [],?RouteRequest $routeRequest = null)
     {
@@ -210,9 +172,9 @@ abstract class Router
      *<pre>
      * 略
      *</pre>
+     * @param array $rules 匹配的规则列表
      * @param string $uri action 地址
      * @param array $params 参数
-     * @param array $rules 匹配的规则列表
      * @return array
      */
     public function matchActionRules(array $rules = [],string $uri,array $params = [])
@@ -222,7 +184,7 @@ abstract class Router
 
         if (!empty($rules)) {
             foreach ($rules as $rule) {
-                /** @var EasyRule $rule */
+                /** @var Rule $rule */
                 $matchResult = $rule->parseUrL($uri, $params);
                 if ($matchResult !== false) {
                     break;
@@ -232,6 +194,18 @@ abstract class Router
 
         return $matchResult;
     }
+
+    /**
+     * 添加路由规则
+     *<B>说明：</B>
+     *<pre>
+     *  略
+     *</pre>
+     * @param Rule $rule 路由规则
+     * @param string $method 方法
+     * @return void
+     */
+    abstract public function addRule(Rule $rule,string $method = ''):void;
 
     /**
      * 解析路由地址

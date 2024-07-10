@@ -1,5 +1,6 @@
 <?php
-namespace hehe\core\hrouter\request;
+namespace hehe\core\hrouter\requests;
+
 use hehe\core\hrouter\base\RouteRequest;
 use Exception;
 

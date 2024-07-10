@@ -1,7 +1,7 @@
 <?php
-namespace hehe\core\hrouter\easy\params;
+namespace hehe\core\hrouter\params;
 
-use hehe\core\hrouter\easy\ParamRule;
+use hehe\core\hrouter\base\ParamRule;
 
 /**
  * Pathinfo形式参数解析类
@@ -34,7 +34,7 @@ class PathinfoParam extends ParamRule
         return $vars;
     }
 
-    public function format(array &$params)
+    public function build(array &$params)
     {
         $urlParams = [];
         if (count($this->names) > 0) {

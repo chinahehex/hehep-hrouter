@@ -4,7 +4,6 @@ namespace hehe\core\hrouter\annotation;
 use hehe\core\hcontainer\ann\base\AnnotationProcessor;
 use hehe\core\hrouter\base\GroupRule;
 use hehe\core\hrouter\base\Rule;
-use hehe\core\hrouter\easy\EasyRule;
 use hehe\core\hrouter\Route;
 use hehe\core\hrouter\RouteManager;
 

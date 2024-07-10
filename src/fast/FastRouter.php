@@ -1,13 +1,13 @@
 <?php
-namespace hehe\core\hrouter\easy;
+namespace hehe\core\hrouter\fast;
 
 use hehe\core\hrouter\base\Router;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
-use hehe\core\hrouter\base\RuleCollector;
+use hehe\core\hrouter\Route;
 
 /**
- * esay url路由控制类
+ * url路由控制类
  *<B>说明：</B>
  *<pre>
  *  解析url，解析类型有:路由规则，url映射，子域名映射
@@ -18,8 +18,55 @@ use hehe\core\hrouter\base\RuleCollector;
  * 略
  *</pre>
  */
-class EasyRouter extends Router
+class FastRouter extends Router
 {
+    /**
+     * 路由规则收集器
+     * @var RuleCollector
+     */
+    public $ruleCollector;
+
+    /**
+     * 构造方法
+     *<B>说明：</B>
+     *<pre>
+     *  略
+     *</pre>
+     * @param array $attrs 配置参数
+     */
+    public function __construct(array $attrs = [])
+    {
+        parent::__construct($attrs);
+
+        $this->ruleCollector = new RuleCollector();
+    }
+
+    /**
+     * 添加路由规则
+     *<B>说明：</B>
+     *<pre>
+     *  略
+     *</pre>
+     * @param Rule $rule 路由规则
+     * @param string $method 方法
+     * @return void
+     */
+    public function addRule(Rule $rule,string $method = ''):void
+    {
+        if (empty($method)) {
+            $method = Route::DEFAULT_RULE_METHOD;
+        }
+
+        $rule_methods = $rule->getArrMethod();
+        if (empty($rule_methods)) {
+            $rule_methods[] = $method;
+        }
+
+        $rule->init();
+
+        $this->ruleCollector->addRule($rule,$rule_methods);
+    }
+
 
     /**
      * 解析pathinfo
@@ -50,7 +97,7 @@ class EasyRouter extends Router
         // 变量全局路由
         if ($matchResult === false) {
             // 执行请求方法路由规则
-            $rules = $this->ruleCollector->getVariableUriRules(RuleCollector::ANY_RULE_METHOD);
+            $rules = $this->ruleCollector->getVariableUriRules(Route::ANY_RULE_METHOD);
             $matchResult = $this->matchUriRules($rules,$routeRequest);
         }
 
@@ -121,15 +168,17 @@ class EasyRouter extends Router
 
         // 遍历GET请求类型变量路由
         if ($matchResult === false) {
-            $matchResult = $this->matchActionRules($this->ruleCollector->getVariableActionRules(RuleCollector::GET_RULE_METHOD),$uri,$params);
+            $matchResult = $this->matchActionRules($this->ruleCollector->getVariableActionRules(Route::GET_RULE_METHOD),$uri,$params);
         }
 
         // 变量*请求类型变量路由
         if ($matchResult === false) {
-            $matchResult = $this->matchActionRules($this->ruleCollector->getVariableActionRules(RuleCollector::ANY_RULE_METHOD),$uri,$params);
+            $matchResult = $this->matchActionRules($this->ruleCollector->getVariableActionRules(Route::ANY_RULE_METHOD),$uri,$params);
         }
 
         $url = "";
+        $matchRule = null;
+        
         if ($matchResult !== false) {
             list($url,$params,$matchRule) = $matchResult;
         } else {

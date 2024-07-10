@@ -1,5 +1,5 @@
 <?php
-namespace hehe\core\hrouter\easy;
+namespace hehe\core\hrouter\base;
 
 
 /**
@@ -22,5 +22,5 @@ abstract class ParamRule
 
     abstract public function parse(string $param);
 
-    abstract public function format(array &$params);
+    abstract public function build(array &$params);
 }

@@ -4,6 +4,7 @@ use  hehe\core\hcontainer\ann\base\Annotation;
 use Attribute;
 
 /**
+ * restful api 注解类
  * @Annotation("hehe\core\hrouter\annotation\RouteProcessor")
  */
 #[Annotation("hehe\core\hrouter\annotation\RouteProcessor")]

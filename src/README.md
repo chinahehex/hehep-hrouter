@@ -190,8 +190,6 @@ Route::get("user/<action:get|list>","user/<action>");
 
 ```
 
-
-
 ### 可选变量路由
 - 说明
 ```
@@ -223,17 +221,44 @@ Route::get("<module:\w+/?>news/<action:get|list>","<module>news/<action>");
 
 ```
 
+### 私有变量路由
+- 说明
+```
+私有变量格式:<_变量名:正则表达式>,变量名以下划线(_)开头
+私有变量规则:私有变量只负责验证,不会出现在解析URL地后的参数里
+```
+
+- 示例代码
+```php
+use hehe\core\hrouter\Route;
+$hrouter = new RouteManager();
+
+Route::addGroup("<_ssl:http|https>://www.xxx.cn",function(){
+    Route::get("news/list","news/list");
+    Route::get("news/get/<id:\d+>","news/get");
+})->asDefaults(['ssl'=>'http']);
+
+// 解析http:http://www.xxx.cn/news/list,返回:url:news/news,$params:[]
+// 解析http:https://www.xxx.cn/news/get/1,返回:url:news/get,$params:["id"=>1]
+$url = $hrouter->buildUrL("news/list");
+// $url:http://www.xxx.cn//news/list
+
+$url = $hrouter->buildUrL("news/list",["ssl"=>'https']);
+// $url:https://www.xxx.cn//news/list
+
+```
+
 ### 默认变量路由
 - 说明
 ```
-提示:带?可选默认变量值不会现在"路由规则","路由地址"里 
+提示:带问号(?)可选默认变量值不会现在"路由规则","路由地址"里 
 ```
 
-- 代码示例
+- 非可选默认变量
 ```php
 use hehe\core\hrouter\RouteManager;
 use hehe\core\hrouter\Route;
-$hrouter = new RouteManager([]);
+$hrouter = new RouteManager();
 
 Route::get("<lang:\w+>/news/list","news/list")
             ->asDefaults(['lang'=>'ch']);
@@ -242,6 +267,17 @@ Route::get("<lang:\w+>/news/list","news/list")
 // 解析pathinfo:en/news/list,返回:url:news/list,$params:["lang"=>'en']
 $url = $hrouter->buildUrL("news/list",["lang"=>"ch"]);
 // $url:ch/news/list
+
+$url = $hrouter->buildUrL("news/list",["lang"=>"en"]);
+// $url:en/news/list
+
+```
+
+- 带问号(?)可选默认变量
+```php
+use hehe\core\hrouter\RouteManager;
+use hehe\core\hrouter\Route;
+$hrouter = new RouteManager();
 
 // 带?问号
 Route::get("<lang:\w+/?>news/list","news/list")
@@ -263,9 +299,21 @@ $url = $hrouter->buildUrL("news/list",["lang"=>"ch"]);
 Route::get("<lang:\w+/?>abc/list","<lang>abc/plist")
     ->asDefaults(['lang'=>'ch']);
     
-// 解析pathinfo:ch/news/list,返回:url:news/list,$params:["lang"=>'ch']
-// 解析pathinfo:en/news/list,返回:url:news/list,$params:["lang"=>'en']
-// 解析pathinfo:news/list,返回:url:news/list,$params:["lang"=>'ch']
+// 解析pathinfo:ch/news/list,返回:url:news/list,$params:[]
+// 解析pathinfo:en/news/list,返回:url:en/news/list,$params:[]
+// 解析pathinfo:news/list,返回:url:news/list,$params:[]
+$url = $hrouter->buildUrL("news/list",["lang"=>"ch"]);
+// $url:news/list
+
+$url = $hrouter->buildUrL("news/list",["lang"=>"en"]);
+// $url:en/news/list
+
+$url = $hrouter->buildUrL("ch/news/list");
+// $url:news/list
+
+
+$url = $hrouter->buildUrL("en/news/list");
+// $url:en/news/list
 
 ```
 
@@ -449,18 +497,24 @@ Route::addGroup("blog",function(){
 
 
 ### 域名路由
-- 说明
-```
-
-```
 
 - 常规域名路由
 ```php
-Route::get("http://<language:[a-z]+>.xxx.com/user/get","user/get");
+use hehe\core\hrouter\Route;
+Route::get("http://<language:[a-z]+>.xxx.com/user/get","user/get")
+    ->asDefaults(["language"=>'ch']);
+
+Route::get("user/get","user/get")
+    ->asDefaults(["language"=>'ch'])->asDomain("http://<language:[a-z]+>.xxx.com");
+
 ```
 
 - 分组域名路由
 ```php
+ Route::addGroup("<_ssl:http|https>://www.xxx.cn",function(){
+    Route::get("news/list","news/list");
+    Route::get("news/get/<id:\d+>","news/get");
+})->asDefaults(['ssl'=>'http']);
 
 ```
 

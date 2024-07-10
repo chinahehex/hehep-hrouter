@@ -1,15 +1,18 @@
 <?php
 namespace hehe\core\hrouter\base;
 
-use hehe\core\hrouter\easy\EasyRule;
 use hehe\core\hrouter\Route;
 
-class GroupRule extends EasyRule
+class GroupRule extends Rule
 {
+
+    const ROUTE_FLAG_NAME = '_hroute';
+    const MERGE_SPLIT_NAME = '_hehe_';
+
     protected $completeMatch = false;
 
     /**
-     * @var EasyRule[]
+     * @var Rule[]
      */
     public $subRules = [];
 
@@ -46,8 +49,6 @@ class GroupRule extends EasyRule
     protected $variableUriRules = [];
     protected $variableActionRules = [];
 
-    protected $_hroute = false;
-    protected $_hroute_name = '_hroute';
 
     /**
      * 合并路由缓存
@@ -65,12 +66,10 @@ class GroupRule extends EasyRule
     public function initGroup()
     {
         if ($this->completeMatch === false) {
-            $this->uri = $this->uri . $this->buildFlagName($this->_hroute_name . ':.*');
+            $this->uri = $this->uri . $this->buildFlagName(self::ROUTE_FLAG_NAME . ':.*');
             if ($this->action !== '') {
                 if (substr($this->action,0,1) !== '/') {
-                    $this->action = $this->action . $this->buildFlagName($this->_hroute_name);
-                } else {
-                    $this->_hroute = true;
+                    $this->action = $this->action . $this->buildFlagName(self::ROUTE_FLAG_NAME);
                 }
             } else {
                 $this->action = $this->uri;
@@ -185,7 +184,7 @@ class GroupRule extends EasyRule
     {
         $methods = $rule->getArrMethod();
         if (empty($methods)) {
-            $methods[] = RuleCollector::ANY_RULE_METHOD;
+            $methods[] = Route::ANY_RULE_METHOD;
         }
 
         foreach ($methods as $method) {
@@ -234,7 +233,7 @@ class GroupRule extends EasyRule
             $search = [];
             foreach ($uriParams as $name) {
                 $search[] = $this->buildFlagName($name);
-                $replace[] = $this->buildFlagName($name . '_hehe_' . $index );
+                $replace[] = $this->buildFlagName($name . self::MERGE_SPLIT_NAME . $index );
             }
 
             $uriRegexs[] = str_replace($search,$replace,$uriRegex);
@@ -259,7 +258,7 @@ class GroupRule extends EasyRule
             $search = [];
             foreach ($actionParams as $name) {
                 $search[] = $this->buildFlagName($name);
-                $replace[] = $this->buildFlagName($name . '_hehe_' . $index );
+                $replace[] = $this->buildFlagName($name . self::MERGE_SPLIT_NAME . $index );
             }
 
             $actionRegexs[] = str_replace($search,$replace,$actionRegex);
@@ -271,7 +270,8 @@ class GroupRule extends EasyRule
     /**
      * 匹配合并路由
      * @param array $rules
-     * @param RouteRequest|null $routeRequest
+     * @param ?RouteRequest|null $routeRequest
+     * @param string $cacheName 缓存key
      * @return array|false
      */
     protected function matchMergeUriRules(array $rules = [],?RouteRequest $routeRequest = null,string $cacheName = '')
@@ -301,12 +301,12 @@ class GroupRule extends EasyRule
             $rule_index = '';
             foreach ($matches as $key=>$value) {
                 if (is_string($key) && $value !== '') {
-                    list($name,$rule_index) = explode("_hehe_",$key);
+                    list($name,$rule_index) = explode(self::MERGE_SPLIT_NAME,$key);
                     $match_params[$name] = $value;
                 }
             }
 
-            /** @var EasyRule $rule */
+            /** @var Rule $rule */
             $rule = $myRules[$rule_index];
 
             return $rule->parseUriMatches($match_params,$routeRequest);
@@ -319,11 +319,11 @@ class GroupRule extends EasyRule
      * 匹配合并路由
      * @param array $rules
      * @param RouteRequest|null $routeRequest
+     * @param string $cacheName 缓存key
      * @return array|false
      */
     protected function matchMergeActionRules(array $rules = [],string $uri = '',array $params = [],string $cacheName = '')
     {
-
 
         if ($this->mergeLen === 0) {
             $ruleList = array_chunk($rules,count($rules));
@@ -348,12 +348,12 @@ class GroupRule extends EasyRule
             $rule_index = '';
             foreach ($matches as $key=>$value) {
                 if (is_string($key) && $value !== '') {
-                    list($name,$rule_index) = explode("_hehe_",$key);
+                    list($name,$rule_index) = explode(self::MERGE_SPLIT_NAME,$key);
                     $match_params[$name] = $value;
                 }
             }
 
-            /** @var EasyRule $rule */
+            /** @var Rule $rule */
             $rule = $myRules[$rule_index];
 
             return $rule->parseActionMatches($match_params,$uri,$params);
@@ -380,10 +380,10 @@ class GroupRule extends EasyRule
             }
         }
 
-        if ($matchResult === false && isset($this->variableUriRules[RuleCollector::ANY_RULE_METHOD])) {
-            $rules = $this->variableUriRules[RuleCollector::ANY_RULE_METHOD];
+        if ($matchResult === false && isset($this->variableUriRules[Route::ANY_RULE_METHOD])) {
+            $rules = $this->variableUriRules[Route::ANY_RULE_METHOD];
             if ($this->mergeRule) {
-                $matchResult = $this->matchMergeUriRules($rules,$routeRequest,'uri.' . RuleCollector::ANY_RULE_METHOD);
+                $matchResult = $this->matchMergeUriRules($rules,$routeRequest,'uri.' . Route::ANY_RULE_METHOD);
             } else {
                 $matchResult = $this->router->matchUriRules($rules,$routeRequest);
             }
@@ -418,19 +418,19 @@ class GroupRule extends EasyRule
 
         $matchResult = false;
         // 匹配分组路由规则器
-        if (isset($this->variableActionRules[RuleCollector::GET_RULE_METHOD])) {
-            $rules = $this->variableActionRules[RuleCollector::GET_RULE_METHOD];
+        if (isset($this->variableActionRules[Route::GET_RULE_METHOD])) {
+            $rules = $this->variableActionRules[Route::GET_RULE_METHOD];
             if ($this->mergeRule) {
-                $matchResult = $this->matchMergeActionRules($rules,$url,$params,"action." . RuleCollector::GET_RULE_METHOD);
+                $matchResult = $this->matchMergeActionRules($rules,$url,$params,"action." . Route::GET_RULE_METHOD);
             } else {
                 $matchResult = $this->router->matchActionRules($rules,$url,$params);
             }
         }
 
-        if ($matchResult === false && isset($this->variableActionRules[RuleCollector::ANY_RULE_METHOD])) {
-            $rules = $this->variableActionRules[RuleCollector::ANY_RULE_METHOD];
+        if ($matchResult === false && isset($this->variableActionRules[Route::ANY_RULE_METHOD])) {
+            $rules = $this->variableActionRules[Route::ANY_RULE_METHOD];
             if ($this->mergeRule) {
-                $matchResult = $this->matchMergeActionRules($rules,$url,$params,"action." . RuleCollector::ANY_RULE_METHOD);
+                $matchResult = $this->matchMergeActionRules($rules,$url,$params,"action." . Route::ANY_RULE_METHOD);
             } else {
                 $matchResult = $this->router->matchActionRules($rules,$url,$params);
             }

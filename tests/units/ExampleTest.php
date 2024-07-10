@@ -836,6 +836,7 @@ class ExampleTest extends TestCase
         $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/get/2","get","http://www.hehex.cn"));
         $this->assertTrue($routerRequest->getRouteUrl() == "news/get");
         $this->assertTrue($this->hrouter->buildUrL("news/get",['id'=>2]) == "http://www.hehex.cn/news/get/2");
+        $this->assertTrue($this->hrouter->buildUrL("news/get",['id'=>2,"ssl"=>"https"]) == "https://www.hehex.cn/news/get/2");
     }
 
     public function testDefaultVar()
