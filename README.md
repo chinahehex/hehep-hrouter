@@ -33,7 +33,7 @@ $route_conf = [
     
     // 路由解析器定义
     'customRouter'=>[
-        'class'=>'hehe\core\hrouter\easy\EasyRouter',
+        'class'=>'hehe\core\hrouter\fast\FastRouter',
         'suffix'=>true,// 全局前缀
         'domain'=>false,// 生产url 地址时是否显示域名
     ],
