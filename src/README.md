@@ -343,7 +343,7 @@ $uri = $hrouter->buildUrl('news/get',['userid'=>2260,'id'=>1]);
 
 ```
 
-### 类绑定路由
+### 绑定类路由
 - 说明
 ```
 基本格式:完整类路径@方法名
@@ -361,20 +361,20 @@ Route::get("user/<action:\w+>","app/user/AdminController@<action>");
 
 参数 | 说明 | 方法名| 示例
 ----------|-------------|------------|------------
-`domain`  | 是否域名检测 | asDomain | asDomain(),asDomain(true)
-`suffix`  | 生成URL地址时是否加入后缀 | asSuffix | asSuffix(),asSuffix("html")
-`method`  | 请求类型 | asMethod | asMethod("get"),asMethod("get|post")
-`id`  | 路由唯一标识(全局唯一),用于快速生成URL地址 | asId | asId("news")
+`domain`  | 是否域名检测 | asDomain | asDomain(true)
+`suffix`  | 生成URL是否加入后缀 | asSuffix | asSuffix("html")
+`method`  | 请求类型 | asMethod | asMethod("get")
+`id`  | 路由唯一标识 | asId | asId("news")
 `uriParams`  | "路由规则"变量集合 | asParams | asParams(["id"=>"\d+"])
-`defaults`  | 默认变量集合 | asDefaults | asDefaults(['language'=>'en']),asDefaults(['page'=>1])
-`completeMatch`  | 是否完全匹配路由规则(正则最后添加$结束符),默认完全匹配 | asCompleteMatch | asCompleteMatch(false)
+`defaults`  | 默认变量集合 | asDefaults | asDefaults(['lang'=>'en'])
+`completeMatch`  | 是否完全匹配路由规则,默认完全匹配 | asCompleteMatch | asCompleteMatch(false)
 
 - 示例代码
 ```php
 use hehe\core\hrouter\RouteManager;
 use hehe\core\hrouter\Route;
 
-// 设置"路由规则"参数
+// 设置"路由规则"变量
 Route::get("user/<id>","user/get")
     ->asParams(["id"=>"\d+"]);
     
@@ -382,15 +382,15 @@ Route::get("user/<id>","user/get")
 Route::get("user/<id:\d+>","user/get")
     ->asSuffix();
 
-// 设置路由唯一标识,生成地址时,直接使用"news"定位此条规则,避免了遍历查找
+// 设置路由唯一标识,生成地址时,直接使用"news_id"定位此条规则,避免了遍历查找
 Route::get("news/<id:\d+>","news/get")
-    ->asId("news");
+    ->asId("news_id");
     
 $htouer = new RouteManager();
 /** 使用"news"生成URL地址,最后地址为:"news/122" **/
-$htouer->buildUrL("news",["id"=>122]);
+$htouer->buildUrL("news_id",["id"=>122]);
 
-// 设置默认参数
+// 设置默认变量
 Route::get("news/list/<page:\d+>","news/list")
     ->asDefaults(["page"=>1]);
 
@@ -421,15 +421,15 @@ Route::addGroup("blog",function(){
 use hehe\core\hrouter\Route;
 Route::addGroup("blog",function(){
     Route::addRoute("list","list");
-    Route::get("get/<id>","get");
+    Route::get("get/<id>","get")->asParams(["id"=>"\d+"]);
     Route::post("add","doadd");
     Route::get("/hblog/add","doadd");
     Route::get("page","page/list");
-})->asParams(["id"=>"\d+"])->asPrefix("hblog/");
+})->asPrefix("hblog/");
 
 // 分组后相当于
 // Route::addRoute("blog/list","hblog/list");
-// Route::get("get/<id:\d+>","hblog/get")->asParams(["id"=>"\d+"]);
+// Route::get("blog/get/<id:\d+>","hblog/get")->asParams(["id"=>"\d+"]);
 // Route::post("blog/add","hblog/doadd");
 // Route::get("hblog/add","hblog/doadd");
 // Route::get("blog/page","hblog/page/list");
@@ -441,18 +441,17 @@ Route::addGroup("blog",function(){
 use hehe\core\hrouter\Route;
 Route::addGroup("<module:\w+>/blog",function(){
     Route::addRoute("list","list");
-    Route::get("get/<id>","get");
+    Route::get("get/<id>","get")->asParams(["id"=>"\d+"]);
     Route::post("add","doadd");
     Route::get("/hblog/add","/hblog/doadd");
     Route::get("page","page/list")->asSuffix("shtml");
 })->asMethod("get")
     ->asPrefix("<module>/hblog/")
-    ->asParams(["id"=>"\d+"])
     ->asSuffix("html");
 
 // 分组后相当于
 // Route::addRoute("<module:\w+>/blog/list","<module>/hblog/list")->asSuffix("html");
-// Route::get("<module:\w+>/blog/get/<id:\d+>","<module>/hblog/get")->asParams(["id"=>"\d+"]);
+// Route::get("<module:\w+>/blog/get/<id:\d+>","<module>/hblog/get")->asParams(["id"=>"\d+"])->asSuffix("html");
 // Route::post("<module:\w+>/blog/add","<module>/hblog/doadd")->asSuffix("html");
 // Route::get("hblog/add","hblog/doadd")->asSuffix("html");
 // Route::get("<module:\w+>/blog/page","<module>/hblog/page/list")->asSuffix("shtml");
