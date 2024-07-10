@@ -53,8 +53,7 @@ $route_conf = [
             [
                 'uri'=>'<controller:\w+>/<action:\w+>/thread<param:.*>',
                 'action'=>'<controller>/<action>',
-                'pvar'=>'param',
-                'prule'=>['class'=>'value','names'=>['id','status','type']]
+                'prule'=>['pvar'=>'param','class'=>'value','names'=>['id','status','type']]
             ],
     ],
     
@@ -490,7 +489,7 @@ Route::addGroup("blog",function(){
 
 ```
 
-### 分组参数与子路由参数的同步
+### 子路由参数的同步
 
 参数 | 方法 | 分组路由|子路由| 同步至子路由 | 说明
 ----------|------------|:-----:|:-------:|:-----:|------------
@@ -525,7 +524,7 @@ Route::get("user/get","user/get")
 
 ## URL参数解析
 
-### 参数split分隔格式
+### 分隔符(split)格式
 - 说明
 ```
 基本格式:thread-119781-1.html
@@ -557,14 +556,22 @@ use hehe\core\hrouter\Route;
 Route::get([
     'uri'=>'<controller:\w+>/<action:\w+>/thread<param:.*>',
     'action'=>'<controller>/<action>',
-    'pvar'=>'param',
     'prule'=>[
+        'pvar'=>'param',
         'class'=>'split',// 参数解析器类路径
         'mode'=>'dynamic',// fixed:固定参数,dynamic:动态参数
         // 所有参数的默认值以及顺序,如thread-{id}-{status}-{type}.html
         'names'=>['id','status'=>"0",'type'],
     ]
 ]);
+
+Route::get('<controller:\w+>/<action:\w+>/thread<param:.*>','<controller>/<action>')
+         ->asParamsRule([
+            'pvar'=>'param',
+            'class'=>'split',
+            'mode'=>'fixed',
+            'names'=>['id','status'=>"0",'type'] 
+        ]);
 
 // URL地址:news/get/thread-119781-1-1.html,$action::news/get,$params:["id"=>119781,"status"=>1,"type"=>1]
 // URL地址:news/get/thread-119781.html,$action::news/get,$params:["id"=>119781,"status"=>0]
@@ -580,14 +587,23 @@ use hehe\core\hrouter\Route;
 Route::get([
     'uri'=>'<controller:\w+>/<action:\w+>/thread<param:.*>',
     'action'=>'<controller>/<action>',
-    'pvar'=>'param',
+    
     'prule'=>[
+        'pvar'=>'param',
         'class'=>'split',// 参数解析器类路径
         'mode'=>'fixed',// fixed:固定参数,dynamic:动态参数
         // 所有参数的默认值以及顺序,如thread-{id}-{status}-{type}.html
         'names'=>['id','status'=>"0",'type'],
     ]
 ]);
+
+Route::get('<controller:\w+>/<action:\w+>/thread<param:.*>','<controller>/<action>')
+        ->asParamsRule([
+            'pvar'=>'param',
+            'class'=>'split',
+            'mode'=>'fixed',
+            'names'=>['id','status'=>"0",'type'] 
+        ]);
 
 // URL地址:news/get/thread-119781-1-2.html,$action::news/get,$params:["id"=>119781,"status"=>1,"type"=>2]
 // URL地址:news/get/thread-119781-0-1.html,$action::news/get,$params:["id"=>119781,"status"=>0,"type"=>2]
@@ -614,8 +630,9 @@ use hehe\core\hrouter\Route;
 Route::get([
     'uri'=>'<controller:\w+>/<action:\w+>/<param:\w+>',
     'action'=>'<controller>/<action>',
-    'pvar'=>'param',
+    
     'prule'=>[
+        'pvar'=>'param',
         'class'=>'pathinfo',// 参数解析器类路径
 //        'valueSplit'=>'/',
 //        'paramSplit'=>'/',
@@ -623,6 +640,15 @@ Route::get([
         'names'=>['id','status','type'],
     ]
 ]);
+
+// 或
+Route::get('<controller:\w+>/<action:\w+>/thread<param:.*>','<controller>/<action>')
+        ->asParamsRule([
+            'pvar'=>'param',
+//        'valueSplit'=>'/',
+//        'paramSplit'=>'/',
+            'names'=>['id','status','type']
+         ]);
 
 // URL地址:news/get/id/122/status/1/type/1.html,$action::news/get,$params:["id"=>122,"status"=>1,"type"=>1]
 // URL地址:news/get/id/122/type/1.html,$action::news/get,$params:["id"=>122,"type"=>1]
@@ -643,7 +669,7 @@ use hehe\core\hrouter\Route;
 Route::get("news/add","news/doadd");
 Route::get("news/<id:\d+>","news/get");
 Route::get("news/search/conf<params:.*>","news/search")
-->asOptions(["pvar"=>"param","prule"=>["class"=>'split','names'=>["catid"=>0,"status"=>0,] ]]);
+->asOptions(["prule"=>["pvar"=>"param","class"=>'split','names'=>["catid"=>0,"status"=>0,] ]]);
 Route::get("<controller:\w+>/<action:\w+>","<controller>/<action>");
 
 $hrouter = new RouteManager();

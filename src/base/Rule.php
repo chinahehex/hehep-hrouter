@@ -284,8 +284,6 @@ class Rule
         return $this;
     }
 
-
-
     public function getArrMethod():array
     {
         $methods = [];
@@ -385,6 +383,11 @@ class Rule
             $this->mode = self::PARSING_ONLY;
         }
 
+        // URL参数解析
+        if (!empty($this->prule)) {
+            $this->pvar = $this->prule['pvar'];
+        }
+
         $this->buildUri();
         $this->buildAction();
     }
@@ -453,6 +456,18 @@ class Rule
     protected function buildRegex(string $regex,$end = '$#u',$first = '#^'):string
     {
         return $first . $regex . $end;
+    }
+
+    public function asParamsRule(array $prule = []):self
+    {
+        if (isset($prule['pvar'])) {
+            $this->pvar = $prule['pvar'];
+            unset($prule['pvar']);
+        }
+
+        $this->prule = $prule;
+
+        return $this;
     }
 
     protected function getParamRule():ParamRule
