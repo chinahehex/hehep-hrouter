@@ -99,8 +99,8 @@ $url = $hrouter->buildUrL("user/get",["id"=>122]);
 ```
 路由请求类:存储路由解析器需要的数据,比如路由请求对象可以提供pathinfo地址,host,method 等数据
 默认路由请求类:
-WebRouteRequest:常规web路由请求,比如php+nginx 环境下运行web项目
-ConsoleRouteRequest:控制台路由请求,比如php脚本环境下运行web项目
+WebRouteRequest:常规web路由请求,比如php+nginx 环境下运行web请求
+ConsoleRouteRequest:控制台路由请求,比如php脚本环境下运行脚本请求
 
 ```
 
@@ -160,13 +160,16 @@ $rule = $routeReuqst->getRouteRule();// 获取匹配到的路由规则对象
 变量参数:格式<变量名>,<变量名:正则表达式> 或{变量名},{变量名:正则表达式},如<controller:\w+>
 uri:路由规则,即匹配http地址的规则表达式
 action:路由地址,即匹配"控制器/操作"的表达式，常用于生成url地址
-method:请求类型，多个请求类型逗号或|隔开
+method:请求类型，多个请求类型逗号或|隔开,目前支持以下请求类型
+       *(任意类型),GET,POST,PUT,DELETE,PATCH,HEAD
 ```
 
 ### 常规路由
 ```php
 use hehe\core\hrouter\Route;
 
+Route::addRoute("user/add","user/doadd");// 任意请求类型
+Route::addRoute("user/add","user/doadd","*");// 任意请求类型
 Route::addRoute("user/add","user/doadd","get");
 Route::addRoute("user/add","user/doadd","get,post");
 Route::addRoute("user/add","user/doadd","get|post");
@@ -193,7 +196,7 @@ Route::get("user/<action:get|list>","user/<action>");
 ### 可选变量路由
 - 说明
 ```
-在变量参数表达式中末尾带？问号,标识此变量参数为可选
+在变量表达式中末尾带?问号,标识此变量为可选，即可有可无
 以下格式可设置为可选变量:
 <id:\d+?>
 <id?>
@@ -212,7 +215,7 @@ Route::get("user/add/<id>","user/add")->asParams(["id"=>"\d+?"]);
 // 带"/" 路由
 Route::get("user/add<id:/\d+?>","user/add");
 Route::get("user/add<id?>","user/add")->asParams(["id"=>"/\d+"]);
-Route::get("user/add<id?>","user/add")->asParams(["id"=>"/\d+?"]);
+Route::get("user/add<id>","user/add")->asParams(["id"=>"/\d+?"]);
 // 正确url地址:user/add/122,user/add
 
 Route::get("<module:\w+/?>news/<action:get|list>","<module>news/<action>");
@@ -240,11 +243,12 @@ Route::addGroup("<_ssl:http|https>://www.xxx.cn",function(){
 
 // 解析http:http://www.xxx.cn/news/list,返回:url:news/news,$params:[]
 // 解析http:https://www.xxx.cn/news/get/1,返回:url:news/get,$params:["id"=>1]
+
 $url = $hrouter->buildUrL("news/list");
-// $url:http://www.xxx.cn//news/list
+// $url:http://www.xxx.cn/news/list
 
 $url = $hrouter->buildUrL("news/list",["ssl"=>'https']);
-// $url:https://www.xxx.cn//news/list
+// $url:https://www.xxx.cn/news/list
 
 ```
 
@@ -265,6 +269,7 @@ Route::get("<lang:\w+>/news/list","news/list")
 
 // 解析pathinfo:ch/news/list,返回:url:news/list,$params:["lang"=>'ch']
 // 解析pathinfo:en/news/list,返回:url:news/list,$params:["lang"=>'en']
+
 $url = $hrouter->buildUrL("news/list",["lang"=>"ch"]);
 // $url:ch/news/list
 
@@ -285,6 +290,7 @@ Route::get("<lang:\w+/?>news/list","news/list")
 // 解析pathinfo:ch/news/list,返回:url:news/list,$params:["lang"=>'ch']
 // 解析pathinfo:en/news/list,返回:url:news/list,$params:["lang"=>'en']
 // 解析pathinfo:news/list,返回:url:news/list,$params:["lang"=>'ch']
+
 $url = $hrouter->buildUrL("news/list",["lang"=>"ch"]);
 // $url:news/list
 
@@ -295,7 +301,7 @@ $url = $hrouter->buildUrL("news/list",["lang"=>"ch"]);
 // $url:news/list
 
 
-// 变量带?问号,且action带此变量
+// 变量带?问号,且路由地址(action)带此变量
 Route::get("<lang:\w+/?>abc/list","<lang>abc/plist")
     ->asDefaults(['lang'=>'ch']);
     
