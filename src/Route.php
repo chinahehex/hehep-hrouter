@@ -18,7 +18,7 @@ class Route
 
     /**
      * 路由规则定义
-     * @var array
+     * @var Rule[]
      */
     public static $rules = [];
 

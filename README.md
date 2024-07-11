@@ -67,6 +67,7 @@ $route_conf = [
 ```
 路由管理器:收集路由信息,解析url地址,生成url 地址
 路由解析由两部分组成:地址(pathinfo)解析+参数解析
+
 ```
 - 示例代码
 ```php
@@ -81,10 +82,10 @@ Route::get("user/get","user/get","get");
 $hrouter->addRoute("user/<id:\d+>","user/get","get");
 
 // 解析URL地址，并返回结果(假如访问网址"user/123")
-$routeReuqst = $hrouter->parseRequest();
-$action = $routeReuqst->getRouteUrl();//  获取解析后的"路由地址"
-$params = $routeReuqst->getRouteParams();// 获取解析后的额外参数
-$rule = $routeReuqst->getRouteRule();// 获取匹配到的路由规则对象
+$routeRequest = $hrouter->parseRequest();
+$action = $routeRequest->getRouteUrl();//  获取解析后的"路由地址"
+$params = $routeRequest->getRouteParams();// 获取解析后的额外参数
+$rule = $routeRequest->getRouteRule();// 获取匹配到的路由规则对象
 // $action 结果:user/get,$params: ["id"=>123]
 
 // 生成URL地址
@@ -146,9 +147,9 @@ $routeRequest = new AppRouteRequest();
 $hrouter->parseRequest($routeRequest);
 
 // 获取解析结果
-$action = $routeReuqst->getRouteUrl();//  获取解析后的"路由地址"
-$params = $routeReuqst->getRouteParams();// 获取解析后的额外参数
-$rule = $routeReuqst->getRouteRule();// 获取匹配到的路由规则对象
+$action = $routeRequest->getRouteUrl();//  获取解析后的"路由地址"
+$params = $routeRequest->getRouteParams();// 获取解析后的额外参数
+$rule = $routeRequest->getRouteRule();// 获取匹配到的路由规则对象
 
 ```
 
@@ -156,6 +157,7 @@ $rule = $routeReuqst->getRouteRule();// 获取匹配到的路由规则对象
 ### 说明
 ```
 基本格式:["uri"=>"<controller:\w+>/<action:\w+>","action"=>"<controller>/<action>","method"=>"get"]
+伪代码: Route::get("路由规则","路由地址");
 变量参数:格式<变量名>,<变量名:正则表达式> 或{变量名},{变量名:正则表达式},如<controller:\w+>
 uri:路由规则,即匹配http地址的规则表达式
 action:路由地址,即匹配"控制器/操作"的表达式，常用于生成url地址
@@ -324,6 +326,7 @@ $url = $hrouter->buildUrL("en/news/list");
 
 ### 带域名路由
 ```php
+use hehe\core\hrouter\RouteManager;
 use hehe\core\hrouter\Route;
 
 Route::get('http://www.hehep.cn/news/list','news/list');
@@ -362,6 +365,7 @@ Route::get("user/<action:\w+>","app/user/AdminController@<action>");
 `\d+`  | 非负整数（正整数 + 0） | 'user/<id:\d+>'
 `[a-z]+`  | 26个小写字母 | 'http://<lang:[z-z]+>.xxx.cn'
 `.+`  | 任意字符 | 'user/get<param:.+>'
+`\d{4}`  | 日期格式 | news/list/<year:\d{4}>/<month:\d{2}>/<day:\d{2}>
 
 
 
@@ -375,7 +379,7 @@ Route::get("user/<action:\w+>","app/user/AdminController@<action>");
 `suffix`  | 生成URL是否加入后缀 | asSuffix | asSuffix("html")
 `method`  | 请求类型 | asMethod | asMethod("get")
 `id`  | 路由唯一标识 | asId | asId("news")
-`uriParams`  | "路由规则"变量集合 | asParams | asParams(["id"=>"\d+"])
+`params`  | "路由规则"变量集合 | asParams | asParams(["id"=>"\d+"])
 `defaults`  | 默认变量集合 | asDefaults | asDefaults(['lang'=>'en'])
 `completeMatch`  | 是否完全匹配路由规则,默认完全匹配 | asCompleteMatch | asCompleteMatch(false)
 `prule`  | Url参数配置规则 | asParamsRule | asParamsRule(['pvar'=>'params','class'=>'xxx'])
@@ -507,7 +511,7 @@ Route::addGroup("blog",function(){
 ----------|------------|:-----:|:-------:|:-----:|------------
 `suffix`  | asSuffix() |&check;| &check;|&check;|统一设置子路由后缀
 `id`  | asId() |&check;| &check;|&check;|统一设置子路由的id前缀,如分组id:admin::,如子路由id:user,最终子路由id:admin::user
-`uriParams`  | asParams() |&check;| &check;|&check;|统一设置子路由变量,子路由变量与分组变量合并,并且子路由变量优先
+`params`  | asParams() |&check;| &check;|&check;|统一设置子路由变量,子路由变量与分组变量合并,并且子路由变量优先
 `prefix`  | asPrefix("blog/") |&check;| &cross;|&check;|统一设置子路由action前缀(首字符为"/"的除外),分组prefix:blog/,子路由action:list,最终子路由action：blog/list
 `mergeRule`  | asMergeRule(5) |&check;| &cross;|&cross;;|路由规则合并成一条正则表达式进行验证，可以指定一次合并N条
 

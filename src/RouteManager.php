@@ -20,7 +20,7 @@ class RouteManager
 
     /**
      * 路由规则定义
-     * @var array
+     * @var Rule[]
      */
     public $rules = [];
 
@@ -104,6 +104,7 @@ class RouteManager
 
     protected function initRules()
     {
+        /** @var Rule[] $rules */
         $rules = [];
         if (!empty($this->rules)) {
             $rules = array_merge($rules,$this->rules);
@@ -133,7 +134,7 @@ class RouteManager
      * @param array $options
      * @return Rule
      */
-    public function addRoute($uri = '',string $action = '',string $method = '',array $options = []):Rule
+    public function addRoute($uri = '',string $action = '',string $method = Route::ANY_RULE_METHOD,array $options = []):Rule
     {
         $rule = static::createRule($uri,$action,$method,$options);
         $this->register($rule);

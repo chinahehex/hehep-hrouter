@@ -66,13 +66,13 @@ class GroupRule extends Rule
     public function initGroup()
     {
         if ($this->completeMatch === false) {
-            $this->uri = $this->uri . $this->buildFlagName(self::ROUTE_FLAG_NAME . ':.*');
-            if ($this->action !== '') {
-                if (substr($this->action,0,1) !== '/') {
-                    $this->action = $this->action . $this->buildFlagName(self::ROUTE_FLAG_NAME);
+            $this->uriRule = $this->uriRule . $this->buildFlagName(self::ROUTE_FLAG_NAME . ':.*');
+            if ($this->actionRule !== '') {
+                if (substr($this->actionRule,0,1) !== '/') {
+                    $this->actionRule = $this->actionRule . $this->buildFlagName(self::ROUTE_FLAG_NAME);
                 }
             } else {
-                $this->action = $this->uri;
+                $this->actionRule = $this->uriRule;
             }
         }
 
@@ -108,7 +108,7 @@ class GroupRule extends Rule
      */
     protected function syncRules()
     {
-        $rule_attributes = ["uri","action","method","suffix","domain","uriParams","id","defaults"];
+        $rule_attributes = ["uri",'uriRule',"action","actionRule","method","suffix","domain","params","id","defaults"];
         // 开始同步分组配置给rule
         if (count($this->subRules) > 0) {
             $variableMethods = [];
@@ -118,14 +118,26 @@ class GroupRule extends Rule
                 $opts = [];
                 foreach ($options as $name=>$value) {
                     if ($name === 'uri') {
-                        if ($this->rawUri !=='' && substr($value,0,1) !== '/') {
+                        if ($this->uri !=='' && substr($value,0,1) !== '/') {
                             if (!empty($value)) {
-                                $value = $this->rawUri . '/' . $value;
+                                $value = $this->uri . '/' . $value;
                             } else {
-                                $value = $this->rawUri;
+                                $value = $this->uri;
+                            }
+                        }
+                    } else if ($name === 'uriRule') {
+                        if ($this->uri !=='' && substr($value,0,1) !== '/') {
+                            if (!empty($value)) {
+                                $value = $this->uri . '/' . $value;
+                            } else {
+                                $value = $this->uri;
                             }
                         }
                     } else if ($name === 'action') {
+                        if (!empty($value) && $this->prefix !== '' && substr($value,0,1) !== '/') {
+                            $value = $this->prefix . $value;
+                        }
+                    } else if ($name === 'actionRule') {
                         if (!empty($value) && $this->prefix !== '' && substr($value,0,1) !== '/') {
                             $value = $this->prefix . $value;
                         }
@@ -137,9 +149,9 @@ class GroupRule extends Rule
                         if (empty($value) && !empty($this->suffix)) {
                             $value = $this->suffix;
                         }
-                    } else if ($name === 'uriParams') {
-                        if (!empty($this->uriParams)) {
-                            $value = array_merge($this->uriParams,$value);
+                    } else if ($name === 'params') {
+                        if (!empty($this->params)) {
+                            $value = array_merge($this->params,$value);
                         }
                     } else if ($name === 'defaults') {
                         if (!empty($this->defaults)) {
@@ -153,7 +165,6 @@ class GroupRule extends Rule
 
                     $opts[$name] = $value;
                 }
-
                 $rule->asOptions($opts)->init();
                 if ($rule->hasUriFlag()) {
                     $this->addVariableUriRule($rule);
@@ -165,7 +176,7 @@ class GroupRule extends Rule
                 }
             }
 
-            $this->method = implode(',',$variableMethods);
+            $this->method = implode(',',array_unique($variableMethods));
             $this->router->addRule($this);
             $this->router->addRules($this->subRules);
         }
@@ -196,7 +207,7 @@ class GroupRule extends Rule
     {
         $methods = $rule->getArrMethod();
         if (empty($methods)) {
-            $methods[] = RuleCollector::ANY_RULE_METHOD;
+            $methods[] = Route::ANY_RULE_METHOD;
         }
 
         foreach ($methods as $method) {

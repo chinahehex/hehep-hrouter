@@ -1,6 +1,7 @@
 <?php
 namespace hehe\core\hrouter\fast;
 
+use hehe\core\hrouter\base\GroupRule;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
 use hehe\core\hrouter\Route;
@@ -65,6 +66,10 @@ class RuleCollector
             // 生成URL缓存
             if (!$action_flag) {
                 $this->staticActionRules[$method][$rule->getAction()] = $rule;
+                // 如果是分组
+                if ($rule instanceof GroupRule) {
+                    $this->variableActionRules[$method][] = $rule;
+                }
             } else {
                 $this->variableActionRules[$method][] = $rule;
             }

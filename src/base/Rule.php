@@ -12,13 +12,12 @@ class Rule
     const RULE_URI_NAME = 'uri';
     const URL_METHOD_NAME = 'method';
 
-    // 匹配 pathinfo 正则表达式/
-    const PATHINFO_PARAMS_REGEX = '/<(\w+):?([^>]+)?>|\\{(\w+):?([^\\}]+)?\\}/';
-    const PATHINFO_PARAMS_REGEX1 = '/<_?(\w+):?([^>]+)?>/';
-    const PATHINFO_PARAMS_REGEX2 = '/\\{_?(\w+):?([^\\}]+)?\\}/';
+    const URI_FLAG_REGEX = '/<(\w+):?([^>]+)?>|\\{(\w+):?([^\\}]+)?\\}/';
+    const URI_FLAG_REGEX1 = '/<_?(\w+):?([^>]+)?>/';
+    const URI_FLAG_REGEX2 = '/\\{_?(\w+):?([^\\}]+)?\\}/';
 
     // 匹配action 正则表达式
-    const ACTION_PARAMS_REGEX = '/<_?(\w+)>|\\{(\w+)\\}/';
+    const ACTION_FLAG_REGEX = '/<_?(\w+)>|\\{(\w+)\\}/';
 
     /**
      * 只适用于解析URL(parseRequest)
@@ -52,28 +51,35 @@ class Rule
     protected $mode;
 
     /**
-     * pathinfo 正则表达式
+     * 路由规则
      *<B>说明：</B>
      *<pre>
-     *  基本格式:^(?<controller>\w+)/(?<action>\w+)$
+     *  基本格式:<controller:\w+>/<action:\w+>
      *</pre>
      */
     protected $uri = "";
 
+    protected $uriRule = "";
+
     /**
-     * url 规则
+     * 路由地址
      *<B>说明：</B>
      *<pre>
      *  基本格式:<controller>/<action>
-     *  比如:
-     *  pathinfoRule:<controller:\w+>/<id:\d+>
-     *  url 地址可以使用controller,id 参数
-     *  url 最终格式可以有:
-     *  post/<id>
-     *  <controller>/<id>
      *</pre>
      */
     protected $action = "";
+
+    protected $actionRule = "";
+
+    /**
+     * action替换模板
+     *<B>说明：</B>
+     *<pre>
+     * 基本格式:<controller>/<action>
+     *</pre>
+     */
+    protected $actionTemplate = "";
 
     /**
      * 请求类型
@@ -113,7 +119,7 @@ class Rule
      * 后缀
      *<B>说明：</B>
      *<pre>
-     * 略
+     * html,shtml
      *</pre>
      * @var string|bool
      */
@@ -121,34 +127,34 @@ class Rule
 
     /**
      * 是否完全匹配
+     * <B>说明：</B>
+     *<pre>
+     * 在正则表达式添加$结束符
+     *</pre>
      * @var bool
      */
     protected $completeMatch = true;
 
-
-
     /**
-     * url 正则表达式
+     * uri路由规则对应的正则表达式
      *<B>说明：</B>
      *<pre>
-     * 用于匹配url 的正则表达式
      * 基本格式:#^(?P<controller>\w+)/(?P<action>\w+)$#u
      *</pre>
      */
     protected $uriRegex = "";
 
     /**
-     * 验证pathinfo 地址的正则表达式
+     * 路由地址对应的正则表达式
      *<B>说明：</B>
      *<pre>
-     * 用于匹配action的正则表达式
      * 基本格式:#^(?P<controller>\w+)/(?P<action>\w+)$#u
      *</pre>
      */
     protected $actionRegex;
 
     /**
-     * url 替换模板
+     * uri 替换模板
      *<B>说明：</B>
      *<pre>
      * 基本格式:<controller>/<action>
@@ -158,16 +164,26 @@ class Rule
     protected $urlTemplate = "";
 
     /**
-     * uri抽取的参数
+     * uri变量与自定义变量集合
      *<B>说明：</B>
      *<pre>
-     * 基本格式:['controller'=>'\w+,'action'=>'\w+']
+     * 略
      *</pre>
      */
     protected $uriParams = [];
 
     /**
-     * action抽取的参数
+     * 自定义变量集合
+     *<B>说明：</B>
+     *<pre>
+     * 基本格式:['controller'=>'\w+,'action'=>'\w+']
+     *</pre>
+     * @var array
+     */
+    protected $params = [];
+
+    /**
+     * action抽取的变量
      *<B>说明：</B>
      *<pre>
      * 格式:基本格式:['controller'=>'<controller>,'action'=>'<action>']
@@ -176,10 +192,10 @@ class Rule
     protected $actionParams = [];
 
     /**
-     * 默认$_GET参数
+     * 默认变量
      *<B>说明：</B>
      *<pre>
-     * 默认参数不显示在action地址中
+     * 略
      *</pre>
      * @var array
      */
@@ -204,7 +220,7 @@ class Rule
     protected $_paramRule;
 
     /**
-     * 是否初始化
+     * 初始化状态
      * @var bool
      */
     protected $_init_status = false;
@@ -225,13 +241,19 @@ class Rule
     {
         if (!empty($attrs)) {
             foreach ($attrs as $name=>$value) {
+                if ($name === 'uri') {
+                    $this->uriRule = $value;
+                } else if ($name === 'action') {
+                    $this->actionRule = $value;
+                }
+
                 $this->{$name} = $value;
             }
         }
     }
 
     /**
-     *
+     * 初始化规则
      *<B>说明：</B>
      *<pre>
      * 略
@@ -245,13 +267,14 @@ class Rule
 
         $this->_init_status = true;
 
-        if (strpos($this->uri, '://') !== false) {
-            list($host,$pathinfo) = explode('://',$this->uri);
+        if (strpos($this->uriRule, '://') !== false) {
+            list($host,$pathinfo) = explode('://',$this->uriRule);
             $this->host = $host;
             $this->domain = true;
         } else if ($this->domain === true) {
             $this->host = rtrim($this->host, '/');
             $this->uri = rtrim($this->host . '/' . $this->uri, '/');
+            $this->uriRule = rtrim($this->host . '/' . $this->uriRule, '/');
         }
 
         // 判断action 是否类路径
@@ -260,8 +283,7 @@ class Rule
         }
 
         // URL参数解析
-        $this->buildPrule();
-
+        $this->buildPrule($this->prule);
         $this->buildUri();
         $this->buildAction();
     }
@@ -332,15 +354,19 @@ class Rule
     public function getArrMethod():array
     {
         $methods = [];
-        if (!empty($this->method)) {
-            if ($this->method === '*') {
-                $methods[] = $this->method;
-            } else if (strpos($this->method,'|') !== false) {
-                $methods = explode('|',$this->method);
-            } else if (strpos($this->method,',') !== false) {
-                $methods = explode(',',$this->method);
-            } else {
-                $methods[] = $this->method;
+        if (!empty($this->method) ) {
+            if (is_string($this->method)) {
+                if ($this->method === '*') {
+                    $methods[] = $this->method;
+                } else if (strpos($this->method,'|') !== false) {
+                    $methods = explode('|',$this->method);
+                } else if (strpos($this->method,',') !== false) {
+                    $methods = explode(',',$this->method);
+                } else {
+                    $methods[] = $this->method;
+                }
+            } else if (is_array($this->method)) {
+                $methods = $this->method;
             }
         }
 
@@ -372,6 +398,7 @@ class Rule
     public function asAction(string $action):self
     {
         $this->action = $action;
+        $this->actionRule = $action;
 
         return $this;
     }
@@ -391,11 +418,11 @@ class Rule
         return $this;
     }
 
-    public function getOptions(array $propertys):array
+    public function getOptions(array $names):array
     {
         $attrs = [];
-        if (!empty($propertys)) {
-            foreach ($propertys as $name) {
+        if (!empty($names)) {
+            foreach ($names as $name) {
                 $attrs[$name] = $this->{$name};
             }
         }
@@ -404,14 +431,13 @@ class Rule
     }
 
 
-
     /**
      * 验证路由地址(action)是否有变量
      * @return bool
      */
     public function hasActionFlag()
     {
-        if (preg_match(self::ACTION_PARAMS_REGEX, $this->action)) {
+        if (preg_match(self::ACTION_FLAG_REGEX, $this->action)) {
             return true;
         } else {
             return false;
@@ -424,7 +450,7 @@ class Rule
      */
     public function hasUriFlag()
     {
-        if (preg_match(self::PATHINFO_PARAMS_REGEX, $this->uri)) {
+        if (preg_match(self::URI_FLAG_REGEX, $this->uri)) {
             return true;
         } else {
             return false;
@@ -433,11 +459,15 @@ class Rule
 
     public function asParams(array $params = []):self
     {
-        $this->uriParams = array_merge($this->uriParams,$params);
+        $this->params = array_merge($this->params,$params);
 
         return $this;
     }
 
+    public function getParams():self
+    {
+        return $this->params;
+    }
 
     public function getUriParams():array
     {
@@ -500,10 +530,11 @@ class Rule
      *  返回参数格式:{"controller":"\w+","action":"\w+"}
      *</pre>
      */
-    private function buildUriParams():void
+    private function buildUriParams(string $uri):void
     {
-
-        if (preg_match_all(self::PATHINFO_PARAMS_REGEX, $this->uri, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
+        $this->uriParams = [];
+        if (preg_match_all(self::URI_FLAG_REGEX, $uri, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
+            $matcheParams = [];
             foreach ($matches as $match) {
                 if (!empty($match[1][0])) {
                     $name = $match[1][0];
@@ -513,47 +544,64 @@ class Rule
                     $pattern = isset($match[4][0]) ? $match[4][0] : '[^\/]+';
                 }
 
-                // 可选状态
-                $optional_status = false;
-                if (substr($name,-1) === '?') {
-                    $name = substr($name,0,strlen($name) - 1);
-                    $optional_status = true;
-                } else if (substr($pattern,-1) === '?') {
-                    $pattern = substr($pattern,0,strlen($pattern) - 1);
-                    $optional_status = true;
-                }
-
-                if (substr($name,0,1) === '_') {
-                    $name = substr($name,1);
-                    $this->privateVars[$name] = $name;
-                }
-
-                if (isset($this->uriParams[$name])) {
-                    if (substr($this->uriParams[$name],-1) === '?') {
-                        $optional_status = true;
-                        $pattern = substr($this->uriParams[$name],0,strlen($this->uriParams[$name]) - 1);
-                    } else {
-                        $pattern = $this->uriParams[$name];
-                    }
-                }
-
-                if ($optional_status === true) {
-                    if (substr($pattern,-1) === '/') {
-                        $regex = substr($pattern,0,strlen($pattern) - 1);
-                        $this->uriParams[$name] = ['pattern'=>"((?P<$name>$regex)/)?",'name'=>"<$name>/"];
-                    } else if (substr($pattern,0,1) === '/') {
-                        $regex = substr($pattern,1);
-                        $this->uriParams[$name] = ['pattern'=>"(/(?P<$name>$regex))?",'name'=>"/<$name>"];
-                    } else {
-                        $this->uriParams[$name] = ['pattern'=>"(?P<$name>$pattern)?",'name'=>"<$name>"];
-                    }
-                }  else {
-                    $this->uriParams[$name] = $pattern;
-                }
+                $matcheParams[$name] = $pattern;
             }
+
+            $this->buildFlagUriParams($matcheParams);
         }
 
+        $this->buildFlagUriParams($this->params);
     }
+
+    protected function buildFlagUriParams(array $params = [])
+    {
+        foreach ($params as $name=>$pattern) {
+            // 可选状态
+            $optional_status = false;
+            if (substr($name,-1) === '?') {
+                $name = substr($name,0,strlen($name) - 1);
+                $optional_status = true;
+            } else if (substr($pattern,-1) === '?') {
+                $pattern = substr($pattern,0,strlen($pattern) - 1);
+                $optional_status = true;
+            }
+
+            // 提取私有变量
+            if (substr($name,0,1) === '_') {
+                $name = substr($name,1);
+                $this->privateVars[$name] = $name;
+            }
+
+            if (isset($this->uriParams[$name])) {
+                $flagParam = $this->uriParams[$name];
+                if ($flagParam['optional'] == true) {
+                    $optional_status = true;
+                }
+
+                if ($pattern !=='' && $pattern !== '[^\/]+') {
+
+                } else {
+                    $pattern = $this->uriParams[$name]['regex'];
+                }
+            }
+
+            if ($optional_status === true) {
+                if (substr($pattern,-1) === '/') {
+                    $regex = substr($pattern,0,strlen($pattern) - 1);
+                    $this->uriParams[$name] = ['pattern'=>"((?P<$name>$regex)/)?",'regex'=>$regex,'optional'=>true,'name'=>"<$name>/"];
+                } else if (substr($pattern,0,1) === '/') {
+                    $regex = substr($pattern,1);
+                    $this->uriParams[$name] = ['pattern'=>"(/(?P<$name>$regex))?",'regex'=>$regex,'optional'=>true,'name'=>"/<$name>"];
+                } else {
+                    $this->uriParams[$name] = ['pattern'=>"(?P<$name>$pattern)?",'regex'=>$pattern,'optional'=>true,'name'=>"<$name>"];
+                }
+            }  else {
+                $this->uriParams[$name] = ['pattern'=>"(?P<$name>$pattern)",'regex'=>$pattern,'optional'=>false,'name'=>"<$name>"];
+            }
+
+        }
+    }
+
 
     /**
      * 从action抽取参数
@@ -563,10 +611,10 @@ class Rule
      *  返回参数格式:{"controller":"<controller>","action":"<action>"}
      *</pre>
      */
-    private function buildActionParams():void
+    private function buildActionParams(string $action):void
     {
 
-        if (preg_match_all(self::ACTION_PARAMS_REGEX, $this->action, $matches)) {
+        if (preg_match_all(self::ACTION_FLAG_REGEX, $action, $matches)) {
             if (!empty($matches[1][0])) {
                 foreach ($matches[1] as $name) {
                     $this->actionParams[$name] = "<$name>";
@@ -578,7 +626,6 @@ class Rule
                     $this->actionParams[$name] = "<$name>";
                 }
             }
-
         }
     }
 
@@ -590,10 +637,11 @@ class Rule
     protected function buildUri():void
     {
         $this->uri = trim($this->uri,'/');
+        $this->uriRule = trim($this->uriRule,'/');
 
+        $uri = $this->uriRule;
         // 从uri 提取相关参数
-        $this->buildUriParams();
-
+        $this->buildUriParams($uri);
         /** 以下代码生成uri正则表达式 **/
 
         // 默认替换参数
@@ -615,11 +663,10 @@ class Rule
             }
         }
 
-        $this->urlTemplate = preg_replace([self::PATHINFO_PARAMS_REGEX1,self::PATHINFO_PARAMS_REGEX2], ['<$1>','<$1>'], $this->uri);
+        $this->urlTemplate = preg_replace([self::URI_FLAG_REGEX1,self::URI_FLAG_REGEX2], ['<$1>','<$1>'], $uri);
         $uri_regex = '';
-
         if (empty($this->urlTemplate)) {
-            $uri_regex = $this->uri;
+            $uri_regex = $uri;
         } else {
             $uri_regex = trim(strtr($this->urlTemplate, $replaceParams), '/');
         }
@@ -634,27 +681,28 @@ class Rule
         }
 
         $this->action = trim($this->action, '/');
-        $this->action = preg_replace([self::PATHINFO_PARAMS_REGEX1,self::PATHINFO_PARAMS_REGEX2], ['<$1>','<$1>'], $this->action);
+        $this->actionRule = trim($this->actionRule, '/');
+
+        $this->action = preg_replace([self::URI_FLAG_REGEX1,self::URI_FLAG_REGEX2], ['<$1>','<$1>'], $this->action);
+        $this->actionRule = preg_replace([self::URI_FLAG_REGEX1,self::URI_FLAG_REGEX2], ['<$1>','<$1>'], $this->actionRule);
+        $this->actionTemplate = $this->actionRule;
+
+        $action = $this->actionRule;
+
         // 从action 提取相关参数
-        $this->buildActionParams();
+        $this->buildActionParams($action);
 
         /** 以下代码生成action正则表达式 **/
         $action_regex = '';
         if (empty($this->actionParams)) {
-            $action_regex = $this->action;
+            $action_regex = $action;
         } else {
             $replaceParams = [];
             foreach ($this->actionParams  as $name=>$value) {
-                $pattern = $this->uriParams[$name];
-                if (is_array($pattern)) {
-                    $pattern = $pattern['pattern'];
-                    $replaceParams[$value] = $pattern;
-                } else {
-                    $replaceParams[$value] = "(?P<$name>$pattern)";
-                }
+                $replaceParams[$value] = $this->uriParams[$name]['pattern'];
             }
 
-            $action_regex = strtr($this->action, $replaceParams);
+            $action_regex = strtr($action, $replaceParams);
         }
 
         $this->actionRegex = $action_regex;
@@ -665,10 +713,11 @@ class Rule
     /**
      * 解析Uri匹配到的参数
      * @param array $matches
-     * @param RouteRequest $routeRequest
+     * @param ?RouteRequest $routeRequest
      */
     public function parseUriMatches(array $matches,?RouteRequest $routeRequest = null):array
     {
+
         // 合并默认参数
         foreach ($this->defaults as $name => $value) {
             if (!isset($matches[$name]) || $matches[$name] === '') {
@@ -687,7 +736,7 @@ class Rule
                 if (isset($this->defaults[$name]) && strcmp($this->defaults[$name],$value) === 0) {
                     $action_replace_params[$flag_name] = "";
                 } else {
-                    if (isset($this->uriParams[$name]) && is_array($this->uriParams[$name])) {
+                    if (isset($this->uriParams[$name]) && $this->uriParams[$name]['optional'] === true) {
                         $action_replace_params[$flag_name] = $value === "" ? "" :
                             str_replace($flag_name,$value,$this->uriParams[$name]['name']);
                     } else {
@@ -705,8 +754,8 @@ class Rule
         }
 
 
-        if ($this->action !== '') {
-            $url = strtr($this->action, $action_replace_params);
+        if ($this->actionTemplate !== '') {
+            $url = strtr($this->actionTemplate, $action_replace_params);
         } else {
             $url = strtr($this->urlTemplate, $action_replace_params);
         }
@@ -759,13 +808,13 @@ class Rule
                 $replaceParams[$flag_name] =  $this->getParamRule()->build($urlParams);
             } else if (isset($urlParams[$name])) {
                 if (isset($this->defaults[$name]) && strcmp($this->defaults[$name],$urlParams[$name]) === 0) {
-                    if (is_array($value)) {
+                    if ($value['optional'] === true) {
                         $replaceParams[$flag_name] =  "";
                     } else {
                         $replaceParams[$flag_name] = $urlParams[$name];
                     }
                 } else {
-                    if (is_array($value)) {
+                    if ($value['optional'] === true) {
                         $replaceParams[$flag_name] = str_replace($flag_name,$urlParams[$name],$value['name']);
                     } else {
                         $replaceParams[$flag_name] = $urlParams[$name];
