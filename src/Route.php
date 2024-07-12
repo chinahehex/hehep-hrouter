@@ -2,6 +2,7 @@
 namespace hehe\core\hrouter;
 
 use hehe\core\hrouter\base\GroupRule;
+use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
 
 
@@ -22,6 +23,16 @@ class Route
      */
     public static $rules = [];
 
+    /**
+     * @var RouteManager
+     */
+    public static $routeManager;
+
+    /**
+     * 路由请求类
+     * @var string
+     */
+    public static $routeRequest;
 
     /**
      * 当前的分组对象
@@ -49,6 +60,8 @@ class Route
     {
         if (!is_null(static::$currentGroup)) {
             static::$currentGroup->addRule($rule);
+        } else if (!is_null(static::$routeManager)) {
+            static::$routeManager->register($rule);
         } else {
             static::$rules[] = $rule;
         }
@@ -95,9 +108,9 @@ class Route
      *<pre>
      *  略
      *</pre>
-     * @param array $rules 路由规则
+     * @param ?array $rules 路由规则
      */
-    public static function addRouteRules(?array $rules):void
+    public static function addRules(?array $rules):void
     {
         if (is_null($rules)) {
             static::$rules = [];
@@ -109,7 +122,7 @@ class Route
     /**
      * 创建路由分组
      * @param string $uri
-     * @param callable|null $action
+     * @param ?callable $action
      * @return GroupRule
      */
     public static function addGroup($uri = '',?callable $action = null):GroupRule
@@ -121,15 +134,15 @@ class Route
     }
 
     /**
-     * 生成路由规则对象
+     * 创建路由规则对象
      *<B>说明：</B>
      *<pre>
-     *  初始化路由规则
+     *  略
      *</pre>
-     * @param array|string $uri 路由规则配置
-     * @param string $action 正则规则
-     * @param string $method 正则规则
-     * @param array $options 正则规则
+     * @param array|string $uri 路由规则表达式
+     * @param string $action 路由地址表达式
+     * @param string $method 请求类型
+     * @param array $options 路由配置
      * @return Rule
      */
     public static function createRule($uri = '' ,string $action = '',string $method = '',array $options = []):Rule
@@ -140,5 +153,24 @@ class Route
     public static function createGroup($uri = '',?callable $callable = null):GroupRule
     {
         return RouteManager::createGroup($uri,$callable);
+    }
+
+    public static function intiRoute($route = ''):void
+    {
+        if ($route instanceof RouteManager) {
+            static::$routeManager = $route;
+        } else {
+            static::$routeManager = RouteManager::make($route);
+        }
+    }
+
+    public static function parseRequest($routeRequest = null):RouteRequest
+    {
+        return static::$routeManager->parseRequest($routeRequest);
+    }
+
+    public static function buildUrL(string $url = '',array $params = [],array $options = [])
+    {
+        return static::$routeManager->buildUrL($url,$params,$options);
     }
 }

@@ -117,7 +117,7 @@ class RouteProcessor extends AnnotationProcessor
     public function handleProcessorFinish()
     {
 
-        Route::addRouteRules($this->routeRules);
+        Route::addRules($this->routeRules);
         $this->routeRules = [];
         $this->classGroupRules = [];
     }

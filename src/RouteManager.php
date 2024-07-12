@@ -61,8 +61,8 @@ class RouteManager
      *</pre>
      * @var array
      */
-    public $routerRequest = [
-        'class'=>'WebRouterRequest',
+    public $routeRequest = [
+        'class'=>'WebRouteRequest',
     ];
 
     /**
@@ -83,7 +83,7 @@ class RouteManager
      *</pre>
      * @var string
      */
-    protected $_routerRequestClass = '';
+    protected $_routeRequestClass = '';
 
     /**
      * 构造方法
@@ -245,18 +245,18 @@ class RouteManager
      *<pre>
      *  略
      *</pre>
-     * @param string $router_request_class 路由请求类路径
+     * @param string $route_request_class 路由请求类路径
      * @return RouteRequest
      */
-    public function createRouterRequest(?string $router_request_class = ''):RouteRequest
+    public function createRouteRequest(?string $route_request_class = ''):RouteRequest
     {
-        if (empty($router_request_class)) {
-            $class = $this->getRouterRequestClass();
+        if (empty($route_request_class)) {
+            $class = $this->getRouteRequestClass();
         } else {
-            $class = $router_request_class;
+            $class = $route_request_class;
         }
 
-        $config = $this->routerRequest;
+        $config = $this->routeRequest;
         unset($config['class']);
         $config['router'] = $this->getRouter();
 
@@ -271,21 +271,21 @@ class RouteManager
      *</pre>
      * @return string
      */
-    protected function getRouterRequestClass():string
+    protected function getRouteRequestClass():string
     {
-        if (!empty($this->_routerRequestClass)) {
-            return $this->_routerRequestClass;
+        if (!empty($this->_routeRequestClass)) {
+            return $this->_routeRequestClass;
         }
 
-        if (isset($this->routerRequest['class']) && strpos($this->routerRequest['class'],'\\') !== false) {// 采用命名空间
-            $routerRequestClass = $this->routerRequest['class'];
+        if (isset($this->routeRequest['class']) && strpos($this->routeRequest['class'],'\\') !== false) {// 采用命名空间
+            $routeRequestClass = $this->routeRequest['class'];
         } else {
-            $routerRequestClass = __NAMESPACE__ . '\\requests\\' . $this->routerRequest['class'];
+            $routeRequestClass = __NAMESPACE__ . '\\requests\\' . $this->routeRequest['class'];
         }
 
-        $this->_routerRequestClass = $routerRequestClass;
+        $this->_routeRequestClass = $routeRequestClass;
 
-        return $this->_routerRequestClass;
+        return $this->_routeRequestClass;
     }
 
     /**
@@ -354,6 +354,7 @@ class RouteManager
 
             return new GroupRule($uri);
         } else {
+            $attrs = [];
             if ($uri instanceof \Closure) {
                 $attrs['callable'] = $uri;
             } else if (is_string($uri)) {
@@ -365,29 +366,44 @@ class RouteManager
         }
     }
 
+    public static function make($route = ''):self
+    {
+        $routeConfig = [];
+        if (!empty($route)) {
+            if (is_string($route) ) {
+                $routeConfig['routeRequest'] = ['class'=>$route];
+            } else if (is_array($route)) {
+                $routeConfig = $route;
+            }
+        }
+
+        return new static($routeConfig);
+    }
+
     /**
      * 解析路由地址
      *<B>说明：</B>
      *<pre>
      *  略
      *</pre>
-     * @param array|RouteRequest $routerRequest
+     * @param array|RouteRequest $routeRequest
      * @return RouteRequest
      */
-    public function parseRequest($routerRequest = null):RouteRequest
+    public function parseRequest($routeRequest = null):RouteRequest
     {
         $this->initRules();
-        if ($routerRequest instanceof RouteRequest) {
-            if (is_null($routerRequest->getRouter())) {
-                $routerRequest->setRouter($this->getRouter());
+
+        if ($routeRequest instanceof RouteRequest) {
+            if (is_null($routeRequest->getRouter())) {
+                $routeRequest->setRouter($this->getRouter());
             }
         } else {
-            $routerRequest = $this->createRouterRequest($routerRequest);
+            $routeRequest = $this->createRouteRequest($routeRequest);
         }
 
-        $routerRequest->parseRequest();
+        $routeRequest->parseRequest();
 
-        return $routerRequest;
+        return $routeRequest;
     }
 
     /**

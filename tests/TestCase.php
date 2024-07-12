@@ -41,7 +41,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
     protected function tearDown()
     {
         $this->hrouter = null;
-        Route::addRouteRules(null);
+        Route::addRules(null);
     }
 
     protected function checkVersion()

@@ -214,18 +214,6 @@ class Rule
     public $prule = [];
 
     /**
-     * 参数解析规则对象
-     * @var ParamRule
-     */
-    protected $_paramRule;
-
-    /**
-     * 初始化状态
-     * @var bool
-     */
-    protected $_init_status = false;
-
-    /**
      * 私有变量集合
      * 私有变量不进入URL参数
      * @var array
@@ -237,18 +225,27 @@ class Rule
      */
     protected $router;
 
+    /**
+     * 参数解析规则对象
+     * @var ParamRule
+     */
+    protected $_paramRule;
+
+    /**
+     * 初始化状态
+     * @var bool
+     */
+    protected $_init_status = false;
+
     public function __construct(array $attrs = [])
     {
         if (!empty($attrs)) {
             foreach ($attrs as $name=>$value) {
-                if ($name === 'uri') {
-                    $this->uriRule = $value;
-                } else if ($name === 'action') {
-                    $this->actionRule = $value;
-                }
-
                 $this->{$name} = $value;
             }
+
+            $this->uriRule = $this->uri;
+            $this->actionRule = $this->action;
         }
     }
 
@@ -390,6 +387,19 @@ class Rule
         return $this->uri;
     }
 
+    /**
+     * 验证路由规则(uri)是否有变量
+     * @return bool
+     */
+    public function hasUriFlag()
+    {
+        if (preg_match(self::URI_FLAG_REGEX, $this->uri)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public function getAction():string
     {
         return $this->action;
@@ -401,6 +411,19 @@ class Rule
         $this->actionRule = $action;
 
         return $this;
+    }
+
+    /**
+     * 验证路由地址(action)是否有变量
+     * @return bool
+     */
+    public function hasActionFlag()
+    {
+        if (preg_match(self::ACTION_FLAG_REGEX, $this->action)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public function asOptions(array $options):self
@@ -428,33 +451,6 @@ class Rule
         }
 
         return $attrs;
-    }
-
-
-    /**
-     * 验证路由地址(action)是否有变量
-     * @return bool
-     */
-    public function hasActionFlag()
-    {
-        if (preg_match(self::ACTION_FLAG_REGEX, $this->action)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * 验证路由规则(uri)是否有变量
-     * @return bool
-     */
-    public function hasUriFlag()
-    {
-        if (preg_match(self::URI_FLAG_REGEX, $this->uri)) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     public function asParams(array $params = []):self
@@ -486,7 +482,7 @@ class Rule
         return $this->uriRegex;
     }
 
-    public function getActionRegex()
+    public function getActionRegex():string
     {
         return $this->actionRegex;
     }
@@ -494,11 +490,6 @@ class Rule
     public function getActionParams():array
     {
         return $this->actionParams;
-    }
-
-    protected function buildRegex(string $regex,$end = '$#u',$first = '#^'):string
-    {
-        return $first . $regex . $end;
     }
 
     public function asParamsRule(array $prule = []):self
@@ -629,9 +620,14 @@ class Rule
         }
     }
 
-    public function buildFlagName($name):string
+    protected function buildFlagName($name):string
     {
         return "<{$name}>";
+    }
+
+    protected function buildRegex(string $regex,$end = '$#u',$first = '#^'):string
+    {
+        return $first . $regex . $end;
     }
 
     protected function buildUri():void
@@ -707,8 +703,6 @@ class Rule
 
         $this->actionRegex = $action_regex;
     }
-
-
 
     /**
      * 解析Uri匹配到的参数

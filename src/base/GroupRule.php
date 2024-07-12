@@ -29,12 +29,6 @@ class GroupRule extends Rule
     protected $prefix = '';
 
     /**
-     * uri原始字符串
-     * @var string
-     */
-    protected $rawUri = '';
-
-    /**
      * 是否合并路由
      * @var bool
      */
@@ -55,13 +49,6 @@ class GroupRule extends Rule
      * @var array
      */
     protected $mergeRuleRegexCache = [];
-
-    public function __construct($attrs = [])
-    {
-        parent::__construct($attrs);
-
-        $this->rawUri = $this->uri;
-    }
 
     public function initGroup()
     {
@@ -214,7 +201,6 @@ class GroupRule extends Rule
             $this->variableActionRules[$method][] = $rule;
         }
     }
-
 
     public function asPrefix(string $prefix):self
     {
