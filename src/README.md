@@ -69,7 +69,7 @@ $route_conf = [
 路由解析由两部分组成:地址(pathinfo)解析+参数解析
 
 ```
-- 示例代码
+- 路由管理器操作模式
 ```php
 use hehe\core\hrouter\RouteManager;
 use hehe\core\hrouter\Route;
@@ -78,7 +78,7 @@ use hehe\core\hrouter\Route;
 $hrouter = new RouteManager([]);
 
 // 收集路由
-Route::get("user/get","user/get","get");
+Route::get("user/get","user/get");
 $hrouter->addRoute("user/<id:\d+>","user/get","get");
 
 // 解析URL地址，并返回结果(假如访问网址"user/123")
@@ -93,6 +93,34 @@ $url = $hrouter->buildUrL("user/get",["id"=>122]);
 // $url 结果:user/122
 
 ```
+
+- 路由操作模式
+```php
+use hehe\core\hrouter\RouteManager;
+use hehe\core\hrouter\Route;
+
+// 创建路由管理器对象
+Route::intiRoute();
+// Route::intiRoute(AppRouteRequest:class)
+// Route::intiRoute('WebRouteRequest')
+
+// 收集路由
+Route::get("user/get","user/get");
+Route::addRoute("user/<id:\d+>","user/get","get");
+
+// 解析URL地址，并返回结果(假如访问网址"user/123")
+$routeRequest = Route::parseRequest();
+$action = $routeRequest->getRouteUrl();//  获取解析后的"路由地址"
+$params = $routeRequest->getRouteParams();// 获取解析后的额外参数
+$rule = $routeRequest->getRouteRule();// 获取匹配到的路由规则对象
+// $action 结果:user/get,$params: ["id"=>123]
+
+// 生成URL地址
+$url = Route::buildUrL("user/get",["id"=>122]);
+// $url 结果:user/122
+
+```
+
 
 ## 路由请求
 - 说明
