@@ -69,7 +69,7 @@ $route_conf = [
 路由解析由两部分组成:地址(pathinfo)解析+参数解析
 
 ```
-- 路由管理器操作模式
+- 路由管理器操作方式
 ```php
 use hehe\core\hrouter\RouteManager;
 use hehe\core\hrouter\Route;
@@ -94,7 +94,7 @@ $url = $hrouter->buildUrL("user/get",["id"=>122]);
 
 ```
 
-- 路由操作模式
+- 路由器操作方式
 ```php
 use hehe\core\hrouter\RouteManager;
 use hehe\core\hrouter\Route;
@@ -574,9 +574,13 @@ Route::get("user/get","user/get")
 基本格式:thread-119781-1.html
 类属性如下:
 pvar:URL地址参数解析名称,与"路由规则"中URL参数解析名称对应,比如uri:xxx/thread<hvar:(.*)>,pvar值为:hvar
-names:参数项名称，默认值，以及顺序定义,如['id','status'=>"0",'type']
+names:参数项名称，默认值，正则表达式，以及顺序定义.
+     格式:['status'=>["regex"=>"正则表达式","defval"=>"默认值"]]
+     格式1:['id','status'=>"默认值",'type']
+     格式2:['id'=>["regex"=>'\d+',"defval"=>"0"],'status'=>["regex"=>'\d+',"defval"=>"0"],'type']
 flag:参数项之间的分隔符,默认是中划线-,比如"thread-122-1-1.html"地址中的"122-1-1"
 prefix:参数前缀,默认是中划线-,比如"thread-122-1-1.html"地址中的122前面的中划线-
+defval:全局默认值
 mode:参数数量类型,fixed:固定参数,dynamic:动态参数
 
 固定参数:fixed,如设置names=['id','status'=>"0",'type'],
@@ -631,7 +635,6 @@ use hehe\core\hrouter\Route;
 Route::get([
     'uri'=>'<controller:\w+>/<action:\w+>/thread<param:.*>',
     'action'=>'<controller>/<action>',
-    
     'prule'=>[
         'pvar'=>'param',
         'class'=>'split',// 参数解析器类路径
@@ -664,7 +667,11 @@ Route::get('<controller:\w+>/<action:\w+>/thread<param:.*>','<controller>/<actio
 valueSplit:参数名与值的分隔符,默认"/",如id/1
 paramSplit:参数与参数的分隔符,默认"/",如id/1/status/1,id-1/status-1
 prefix:参数前缀,默认""
-names:参数项名称，默认值，以及顺序定义,如['id','status'=>"0",'type']
+names:参数项名称，默认值，正则表达式，以及顺序定义.
+     格式:['status'=>["regex"=>"正则表达式","defval"=>"默认值"]]
+     格式1:['id','status'=>"默认值",'type']
+     格式2:['id'=>["regex"=>'\d+',"defval"=>"0"],'status'=>["regex"=>'\d+',"defval"=>"0"],'type']
+defval:全局默认值
 ```
 - 示例代码
 ```php

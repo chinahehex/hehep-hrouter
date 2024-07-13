@@ -155,14 +155,39 @@ class ExampleTest extends TestCase
             'action'=>'<controller>/<action>',
             'prule'=>['pvar'=>'param','class'=>'split','names'=>['id','status','type']]
         ]);
+
+        $this->hrouter->addRoute([
+            'uri'=>'user/list/blog<param:(.*)>',
+            'action'=>'user/list',
+            'prule'=>['pvar'=>'param','class'=>'split','names'=>[
+                'id'=>["regex"=>'\d+',"defval"=>"1"],
+                'status'=>["regex"=>'\d+',"defval"=>"1"],
+                'type']]
+        ]);
+
         $routerRequest = $this->hrouter->parseRequest($this->createRequest("news/add/thread-121-1-2"));
         $params = $routerRequest->getRouteParams();
-        //var_dump($params);
         $this->assertTrue($routerRequest->getRouteUrl() == "news/add"
             && $params['id'] == '121' && $params['status'] == '1' && $params['type'] == '2');
-
         $url = $this->hrouter->buildUrl('news/add',['id'=>122,'status'=>1,'type'=>1]);
         $this->assertTrue($url == "news/add/thread-122-1-1");
+
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("user/list/blog-122-11-2"));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "user/list"
+            && $params['id'] == '122' && $params['status'] == '11' && $params['type'] == '2');
+        $url = $this->hrouter->buildUrl('user/list',['id'=>122,'status'=>1,'type'=>1]);
+        $this->assertTrue($url == "user/list/blog-122-1-1");
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("user/list/blog-122-ch-2"));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "user/list"
+            && $params['id'] == '122' && $params['status'] == '1' && $params['type'] == '2');
+
+        $url = $this->hrouter->buildUrl('user/list',['id'=>122,'status'=>1,'type'=>1]);
+        $this->assertTrue($url == "user/list/blog-122-1-1");
+
     }
 
     public function testHParamRule4()
@@ -250,6 +275,15 @@ class ExampleTest extends TestCase
         // user/get/id/1/status/1/type/1/
 
         $this->hrouter->addRoute([
+            'uri'=>'user/list/blog/<param:(.*)>',
+            'action'=>'user/list/blog',
+            'prule'=>['pvar'=>'param','class'=>'pathinfo','names'=>[
+                'id'=>["regex"=>'\d+',"defval"=>"1"],
+                'status'=>["regex"=>'\d+',"defval"=>"0"],
+                'type']]
+        ]);
+
+        $this->hrouter->addRoute([
             'uri'=>'<controller:\w+>/<action:\w+>/<param:(.*)>',
             'action'=>'<controller>/<action>',
             'prule'=>['pvar'=>'param','class'=>'pathinfo','names'=>['id','status','type']]
@@ -269,6 +303,22 @@ class ExampleTest extends TestCase
 
         $url = $this->hrouter->buildUrl('user/get',['id'=>122,'status'=>1]);
         $this->assertTrue($url == "user/get/id/122/status/1");
+
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("user/list/blog/id/121/status/1/type/2"));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "user/list/blog"
+            && $params['id'] == '121' && $params['status'] == '1' && $params['type'] == '2');
+
+        $url = $this->hrouter->buildUrl('user/list/blog',['id'=>122,'status'=>1,'type'=>1]);
+        $this->assertTrue($url == "user/list/blog/id/122/status/1/type/1");
+
+
+        $routerRequest = $this->hrouter->parseRequest($this->createRequest("user/list/blog/id/121/status/ch/type/2"));
+        $params = $routerRequest->getRouteParams();
+        $this->assertTrue($routerRequest->getRouteUrl() == "user/list/blog"
+            && $params['id'] == '121' && $params['status'] == '0' && $params['type'] == '2');
+
     }
 
     public function testDefaultParam()

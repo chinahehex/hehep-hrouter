@@ -22,31 +22,38 @@ class SplitParam extends ParamRule
     protected $names = [];
 
     // 所有参数默认值
-    protected $defaultValue = '';
+    protected $defval = '';
 
     // 参数数量模式 fixed 固定数量,dynamic
     protected $mode = "fixed";
 
+    protected $regex = '';
+
+    public function __construct(array $attrs = [])
+    {
+        parent::__construct($attrs);
+        $this->regex = '/(' . $this->prefix .'([^' .  $this->flag . ']+))/';
+        $this->names = array_values($this->buildNames($this->names,$this->defval));
+    }
+
     public function parse(string $param)
     {
-        $regex = '/(' . $this->prefix .'([^' .  $this->flag . ']+))/';
         $vars = [];
-        if (preg_match_all($regex, $param, $queryMatches)) {
-            $queryMatcheValues = $queryMatches[2];
-            $index = 0;
-            foreach ($this->names as $key=>$name) {
-                $pname = '';
-                if (is_numeric($key)) {
-                    $pname = $name;
-                } else {
-                    $pname = $key;
+        if (preg_match_all($this->regex, $param, $matches)) {
+            $matcheValues = $matches[2];
+            foreach ($this->names as $index=>$var_name) {
+                list($pname,$defval,$var_regex) = $var_name;
+                if (isset($matcheValues[$index])) {
+                    if ($var_regex !== '') {
+                        if (preg_match($var_regex,$matcheValues[$index])) {
+                            $vars[$pname] = $matcheValues[$index];
+                        } else {
+                            $vars[$pname] = $defval;
+                        }
+                    } else {
+                        $vars[$pname] = $matcheValues[$index];
+                    }
                 }
-
-                if (isset($queryMatcheValues[$index])) {
-                    $vars[$pname] = $queryMatcheValues[$index];
-                }
-
-                $index++;
             }
         }
 
@@ -58,40 +65,25 @@ class SplitParam extends ParamRule
 
         $vars = [];
         $flag = false;
-        $index = 0;
 
         // 默认参数状态
         $names = array_reverse($this->names);
-        foreach ($names as $key=>$name) {
-            $pname = '';
-            $def_val = '';
-            if (is_numeric($key)) {
-                $def_val = '';
-                $pname = $name;
-            } else {
-                $def_val = $name;
-                $pname = $key;
-            }
-
-            if ($def_val === '') {
-                $def_val = $this->defaultValue;
-            }
+        foreach ($names as $index=>$var_name) {
+            list($pname,$defval,$regex) = $var_name;
 
             if (isset($params[$pname])) {
                 $flag = true;
-                $vars[$index] =  $params[$pname];
+                $vars[$index] = $params[$pname];
                 unset($params[$pname]);
             } else {
                 if ($flag) {
-                    $vars[$index] = $def_val;
+                    $vars[$index] = $defval;
                 } else {
-                    if ($this->mode == 'fixed') {
-                        $vars[$index] = $def_val;
+                    if ($this->mode === 'fixed') {
+                        $vars[$index] = $defval;
                     }
                 }
             }
-
-            $index++;
         }
 
         $vars = array_reverse($vars);

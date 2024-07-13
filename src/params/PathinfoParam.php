@@ -21,15 +21,42 @@ class PathinfoParam extends ParamRule
     // 参数的前缀
     protected $prefix = '';
 
+    // 所有参数默认值
+    protected $defval = '';
+
     protected $names = [];
+
+    protected $regex = '';
+
+    public function __construct(array $attrs = [])
+    {
+        parent::__construct($attrs);
+        $this->regex = '/(\w+)\\' . $this->valueSplit. '([^\\' . $this->valueSplit .']+)/';
+
+        $this->names = $this->buildNames($this->names,$this->defval);
+    }
 
     public function parse(string $param = '')
     {
-        $regex = '/(\w+)\\' . $this->valueSplit. '([^\\' . $this->valueSplit .']+)/';
         $vars = [];
-        preg_replace_callback($regex, function($match) use(&$vars){
-            $vars[strtolower($match[1])] = strip_tags($match[2]);
+        preg_replace_callback($this->regex, function($matches) use(&$vars){
+            $vars[strtolower($matches[1])] = strip_tags($matches[2]);
         }, $param);
+
+        foreach ($vars as $name=>$value) {
+            if (isset($this->names[$name])) {
+                list($pname,$defval,$var_regex) = $this->names[$name];
+                if ($var_regex !== '') {
+                    if (preg_match($var_regex,$value)) {
+                        $vars[$pname] = $value;
+                    } else {
+                        $vars[$pname] = $defval;
+                    }
+                } else {
+                    $vars[$pname] = $value;
+                }
+            }
+        }
 
         return $vars;
     }
@@ -38,7 +65,7 @@ class PathinfoParam extends ParamRule
     {
         $urlParams = [];
         if (count($this->names) > 0) {
-            foreach ($this->names as $name) {
+            foreach ($this->names as $name=>$vars) {
                 if (isset($params[$name])) {
                     $urlParams[] = $name . $this->valueSplit . $params[$name];
                     unset($params[$name]);
