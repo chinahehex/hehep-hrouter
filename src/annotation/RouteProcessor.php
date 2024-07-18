@@ -84,11 +84,15 @@ class RouteProcessor extends AnnotationProcessor
             $routeValues['action'] = $this->buildActionName($method);
         }
 
+        if (!isset($routeValues['method'])) {
+            $routeValues['method'] = Route::ANY_METHOD;
+        }
+
         $rule = Route::createRule($routeValues);
 
         if (isset($this->classGroupRules[$class])) {
             $groupRule = $this->classGroupRules[$class];
-            $groupRule->addRule($rule);
+            $groupRule->addSubRule($rule);
         } else {
             $this->routeRules[] = $rule;
         }
@@ -104,13 +108,13 @@ class RouteProcessor extends AnnotationProcessor
 
         $groupRule = Route::createGroup($routeValues);
         $groupRule->asPrefix($uri . '/');
-        $groupRule->addRule(Route::createRule("","index",'get'));
-        $groupRule->addRule(Route::createRule("create","create",'get'));
-        $groupRule->addRule(Route::createRule("","save",'post'));
-        $groupRule->addRule(Route::createRule("<id:\d+>","read",'get'));
-        $groupRule->addRule(Route::createRule("<id:\d+>/edit","edit",'get'));
-        $groupRule->addRule(Route::createRule("<id:\d+>","update",'put'));
-        $groupRule->addRule(Route::createRule("<id:\d+>","delete",'delete'));
+        $groupRule->addSubRule(Route::createRule("","index",'get'));
+        $groupRule->addSubRule(Route::createRule("create","create",'get'));
+        $groupRule->addSubRule(Route::createRule("","save",'post'));
+        $groupRule->addSubRule(Route::createRule("<id:\d+>","read",'get'));
+        $groupRule->addSubRule(Route::createRule("<id:\d+>/edit","edit",'get'));
+        $groupRule->addSubRule(Route::createRule("<id:\d+>","update",'put'));
+        $groupRule->addSubRule(Route::createRule("<id:\d+>","delete",'delete'));
         $this->routeRules[] = $groupRule;
     }
 

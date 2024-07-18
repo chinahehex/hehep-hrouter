@@ -57,7 +57,7 @@ class RouteRequest
      *</pre>
      * @return string
      */
-    public function getRouterPathinfo():string
+    public function getRoutePathinfo():string
     {
         if (!is_null($this->_pathinfo)) {
             return $this->_pathinfo;
@@ -108,18 +108,18 @@ class RouteRequest
     public function getFullUrl():string
     {
         $host = $this->getHost();
+        $pathinfo = $this->getRoutePathinfo();
 
         if (!empty($host)) {
-            $pathinfo = $this->getRouterPathinfo();
             return $host . (!empty($pathinfo) ? '/' . $pathinfo : '') ;
         } else {
-            return $this->getRouterPathinfo();
+            return $pathinfo;
         }
     }
 
     /**
      * 设置解析的结果
-     * @param $result
+     * @param $matchResult
      */
     public function setMatchResult(?array $matchResult):void
     {
@@ -175,13 +175,13 @@ class RouteRequest
      *  略
      *</pre>
      * @param string $url url 地址
-     * @param array $vars url 参数
+     * @param array $params url 参数
      * @param array $options url 其他配置
      * @return string
      */
-    public function buildUrl(string $url = '',array $vars = [],array $options = []):string
+    public function buildUrl(string $url = '',array $params = [],array $options = []):string
     {
-        return $this->router->buildUrL($url,$vars,$options);
+        return $this->router->buildUrL($url,$params,$options);
     }
 
     /***** 继承此类以下方法即可 ******/

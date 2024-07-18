@@ -36,6 +36,9 @@ $route_conf = [
         'class'=>'hehe\core\hrouter\fast\FastRouter',
         'suffix'=>true,// 全局前缀
         'domain'=>false,// 生产url 地址时是否显示域名
+        'mergeRule'=>false, // 是否合并路由解析
+        'mergeLen'=>0,// 一次合并的条数
+        'lazy'=>true,// 是否延迟加载规则
     ],
     
     // 路由规则列表
@@ -65,9 +68,7 @@ $route_conf = [
 ## 路由管理器
 - 说明
 ```
-路由管理器:收集路由信息,解析url地址,生成url 地址
-路由解析由两部分组成:地址(pathinfo)解析+参数解析
-
+路由管理器:收集路由信息,配置路由请求,管理路由解析器,解析url地址,生成url 地址
 ```
 - 路由管理器操作方式
 ```php
@@ -76,6 +77,9 @@ use hehe\core\hrouter\Route;
 
 // 创建路由管理器对象
 $hrouter = new RouteManager([]);
+
+// 设置路由请求,路由解析器
+$hrouter->setRouterConfig([])->setRouteRequest([]);
 
 // 收集路由
 Route::get("user/get","user/get");
@@ -100,7 +104,10 @@ use hehe\core\hrouter\RouteManager;
 use hehe\core\hrouter\Route;
 
 // 创建路由管理器对象
-Route::intiRoute();
+$hrouter = Route::intiRoute();
+
+// 设置路由请求,路由解析器
+$hrouter->setRouterConfig([])->setRouteRequest([]);
 // Route::intiRoute(AppRouteRequest:class)
 // Route::intiRoute('WebRouteRequest')
 
@@ -168,11 +175,91 @@ use hehe\core\extend\AppRouteRequest;
 // 创建路由管理器对象
 $hrouter = new RouteManager([]);
 
+// 设置路由请求配置
+$hrouter->setRouteRequest([]);
+
 // 创建路由请求对象
 $routeRequest = new AppRouteRequest();
 
 // 解析URL地址
 $hrouter->parseRequest($routeRequest);
+
+// 获取解析结果
+$action = $routeRequest->getRouteUrl();//  获取解析后的"路由地址"
+$params = $routeRequest->getRouteParams();// 获取解析后的额外参数
+$rule = $routeRequest->getRouteRule();// 获取匹配到的路由规则对象
+
+```
+
+## 路由解释器
+- 说明
+```
+路由解释器类:负责调度规则,解析路由规则,生成后缀,域名等等
+路由解析由两部分组成:地址(pathinfo)解析+参数解析
+    格式:user/list/blog-12-12-12.html,pathinfo:user/list/blog,参数:-12-12-12
+路由解释器属性:
+suffix:url 是否加入上后缀,默认值:false,格式:html
+domain:url 是否加入域名 地址时是否显示域名,格式:http://www.xxx.cn
+mergeRule: 是否合并路由解析,默认值:false,此参数会同步至分组
+mergeLen:一次合并的条数,0 表示全部
+lazy:是否延迟加载规则,默认值:false
+
+```
+
+- 定义路由解释器类
+```php
+namespace hehe\core\hrouter\fast;
+
+use hehe\core\hrouter\base\Router;
+use hehe\core\hrouter\base\RouteRequest;
+use hehe\core\hrouter\base\Rule;
+use hehe\core\hrouter\Route;
+
+class FastRouter extends Router
+{
+    // 收集路由规则
+    public function addRule(Rule $rule):void
+    {
+    
+    }
+    
+    // 解析路由请求,调用路由规则
+    public function parseRequest(RouteRequest $routeRequest)
+    {
+    
+    }
+    
+    // 生成URI地址
+    public function buildUrL(string $uri = '',array $params = [],array $options = [])
+    {
+    
+    }
+
+}
+
+```
+
+- 路由解析器使用示例
+```php
+use hehe\core\hrouter\RouteManager;
+// 创建路由管理器对象
+$hrouter = new RouteManager([]);
+
+$hrouter->setRouterConfig([
+    'class'=>'hehe\core\hrouter\fast\FastRouter',
+    'suffix'=>false,// url 地址后缀
+    // url 是否加入域名
+    'domain'=>false,// 生产url 地址时是否显示域名,
+    // 是否合并路由解析
+    'mergeRule'=>false,
+    // 一次合并的条数
+    'mergeLen'=>0,
+    // 是否延迟加载规则
+    'lazy'=>true,
+]);
+
+// 解析URL地址
+$routeRequest = $hrouter->parseRequest();
 
 // 获取解析结果
 $action = $routeRequest->getRouteUrl();//  获取解析后的"路由地址"
@@ -389,11 +476,11 @@ Route::get("user/<action:\w+>","app/user/AdminController@<action>");
 
 表达式 | 说明 | 示例
 :----------------|-------------|------------
-`\w+`  | 由数字、26个英文字母,下划线 | 'user/<action:\w+>'
-`\d+`  | 非负整数（正整数 + 0） | 'user/<id:\d+>'
-`[a-z]+`  | 26个小写字母 | 'http://<lang:[z-z]+>.xxx.cn'
-`.+`  | 任意字符 | 'user/get<param:.+>'
-`\d{4}`  | 日期格式 | news/list/<year:\d{4}>/<month:\d{2}>/<day:\d{2}>
+`\w+`  | 由数字、26个英文字母,下划线 | 'user/\<action:\w+>'
+`\d+`  | 非负整数（正整数 + 0） | 'user/\<id:\d+>'
+`[a-z]+`  | 26个小写字母 | 'http://\<lang:[z-z]+>.xxx.cn'
+`.+`,`.*`   | 任意字符 | 'user/get\<param:.+>'
+`\d{4}`  | 日期格式 | news/list/\<year:\d{4}>/\<month:\d{2}>/\<day:\d{2}>
 
 
 

@@ -59,8 +59,6 @@ class Rule
      */
     protected $uri = "";
 
-    protected $uriRule = "";
-
     /**
      * 路由地址
      *<B>说明：</B>
@@ -69,8 +67,6 @@ class Rule
      *</pre>
      */
     protected $action = "";
-
-    protected $actionRule = "";
 
     /**
      * action替换模板
@@ -144,6 +140,8 @@ class Rule
      */
     protected $uriRegex = "";
 
+    protected $uriMergeRegex;
+
     /**
      * 路由地址对应的正则表达式
      *<B>说明：</B>
@@ -152,6 +150,8 @@ class Rule
      *</pre>
      */
     protected $actionRegex;
+
+    protected $actionMergeRegex;
 
     /**
      * uri 替换模板
@@ -164,7 +164,7 @@ class Rule
     protected $urlTemplate = "";
 
     /**
-     * uri变量与自定义变量集合
+     * 全部变量集合
      *<B>说明：</B>
      *<pre>
      * 略
@@ -173,7 +173,13 @@ class Rule
     protected $uriParams = [];
 
     /**
-     * 自定义变量集合
+     * uri变量名集合
+     * @var array
+     */
+    protected $uriVars = [];
+
+    /**
+     * 用户自定义变量集合
      *<B>说明：</B>
      *<pre>
      * 基本格式:['controller'=>'\w+,'action'=>'\w+']
@@ -192,6 +198,12 @@ class Rule
     protected $actionParams = [];
 
     /**
+     * action变量名集合
+     * @var array
+     */
+    protected $actionVars = [];
+
+    /**
      * 默认变量
      *<B>说明：</B>
      *<pre>
@@ -199,19 +211,19 @@ class Rule
      *</pre>
      * @var array
      */
-    public $defaults = [];
+    protected $defaults = [];
 
     /**
      * 参数解析名称
      * @var string
      */
-    public $pvar = 'param';
+    protected $pvar = 'param';
 
     /**
      * 参数解析规则配置
      * @var array
      */
-    public $prule = [];
+    protected $prule = [];
 
     /**
      * 私有变量集合
@@ -235,7 +247,13 @@ class Rule
      * 初始化状态
      * @var bool
      */
-    protected $_init_status = false;
+    protected $_initStatus = false;
+
+    /**
+     * 分组id
+     * @var string
+     */
+    public $groupId = '';
 
     public function __construct(array $attrs = [])
     {
@@ -243,9 +261,6 @@ class Rule
             foreach ($attrs as $name=>$value) {
                 $this->{$name} = $value;
             }
-
-            $this->uriRule = $this->uri;
-            $this->actionRule = $this->action;
         }
     }
 
@@ -256,22 +271,21 @@ class Rule
      * 略
      *</pre>
      */
-    public function init():void
+    public function init():self
     {
-        if ($this->_init_status) {
-            return ;
+        if ($this->_initStatus) {
+            return $this;
         }
 
-        $this->_init_status = true;
+        $this->_initStatus = true;
 
-        if (strpos($this->uriRule, '://') !== false) {
-            list($host,$pathinfo) = explode('://',$this->uriRule);
+        if (strpos($this->uri, '://') !== false) {
+            list($host,$pathinfo) = explode('://',$this->uri);
             $this->host = $host;
             $this->domain = true;
         } else if ($this->domain === true) {
             $this->host = rtrim($this->host, '/');
             $this->uri = rtrim($this->host . '/' . $this->uri, '/');
-            $this->uriRule = rtrim($this->host . '/' . $this->uriRule, '/');
         }
 
         // 判断action 是否类路径
@@ -283,6 +297,19 @@ class Rule
         $this->buildPrule($this->prule);
         $this->buildUri();
         $this->buildAction();
+
+        $this->router->ruleCollector->initRule($this);
+
+        return $this;
+    }
+
+    /**
+     * 是否已经初始化
+     * @return bool
+     */
+    public function hasInitStatus()
+    {
+        return $this->_initStatus;
     }
 
     protected function buildPrule(array $prule):void
@@ -336,6 +363,11 @@ class Rule
         return $this;
     }
 
+    public function getCompleteMatch():bool
+    {
+        return $this->completeMatch;
+    }
+
     public function getMethod()
     {
         return $this->method;
@@ -348,7 +380,7 @@ class Rule
         return $this;
     }
 
-    public function getArrMethod():array
+    public function getMethods():array
     {
         $methods = [];
         if (!empty($this->method) ) {
@@ -391,9 +423,9 @@ class Rule
      * 验证路由规则(uri)是否有变量
      * @return bool
      */
-    public function hasUriFlag()
+    public function hasUriVar()
     {
-        if (preg_match(self::URI_FLAG_REGEX, $this->uri)) {
+        if (count($this->uriVars) > 0) {
             return true;
         } else {
             return false;
@@ -408,7 +440,6 @@ class Rule
     public function asAction(string $action):self
     {
         $this->action = $action;
-        $this->actionRule = $action;
 
         return $this;
     }
@@ -417,9 +448,9 @@ class Rule
      * 验证路由地址(action)是否有变量
      * @return bool
      */
-    public function hasActionFlag()
+    public function hasActionVar()
     {
-        if (preg_match(self::ACTION_FLAG_REGEX, $this->action)) {
+        if (count($this->actionVars) > 0) {
             return true;
         } else {
             return false;
@@ -465,9 +496,9 @@ class Rule
         return $this->params;
     }
 
-    public function getUriParams():array
+    public function getUriVars()
     {
-        return $this->uriParams;
+        return $this->uriVars;
     }
 
     public function asDefaults(array $params = []):self
@@ -477,19 +508,38 @@ class Rule
         return $this;
     }
 
-    public function getUriRegex():string
+    public function getUriMergeRegex()
     {
-        return $this->uriRegex;
+        return $this->uriMergeRegex;
     }
 
-    public function getActionRegex():string
+    public function hasVarLeftSplit(string $name):bool
     {
-        return $this->actionRegex;
+        if ($this->uriParams[$name]['split'] === 'left' ) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    public function getActionParams():array
+    public function hasVarRightSplit(string $name):bool
     {
-        return $this->actionParams;
+        if ($this->uriParams[$name]['split'] === 'right' ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    public function getMergeActionRegex():string
+    {
+        return $this->actionMergeRegex;
+    }
+
+    public function getActionVars()
+    {
+        return $this->actionVars;
     }
 
     public function asParamsRule(array $prule = []):self
@@ -521,7 +571,7 @@ class Rule
      *  返回参数格式:{"controller":"\w+","action":"\w+"}
      *</pre>
      */
-    private function buildUriParams(string $uri):void
+    protected function buildUriParams(string $uri):void
     {
         $this->uriParams = [];
         if (preg_match_all(self::URI_FLAG_REGEX, $uri, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
@@ -538,14 +588,15 @@ class Rule
                 $matcheParams[$name] = $pattern;
             }
 
-            $this->buildFlagUriParams($matcheParams);
+            $this->uriVars = $this->buildFlagUriParams($matcheParams);
         }
 
         $this->buildFlagUriParams($this->params);
     }
 
-    protected function buildFlagUriParams(array $params = [])
+    protected function buildFlagUriParams(array $params = []):array
     {
+        $var_names = [];
         foreach ($params as $name=>$pattern) {
             // 可选状态
             $optional_status = false;
@@ -579,18 +630,21 @@ class Rule
             if ($optional_status === true) {
                 if (substr($pattern,-1) === '/') {
                     $regex = substr($pattern,0,strlen($pattern) - 1);
-                    $this->uriParams[$name] = ['pattern'=>"((?P<$name>$regex)/)?",'regex'=>$regex,'optional'=>true,'name'=>"<$name>/"];
+                    $this->uriParams[$name] = ['pattern'=>"((?P<$name>$regex)/)?",'split'=>'right','fist_regex'=>"(?P<$name>:($pattern)?)",'last_regex'=>"(?P<$name>($pattern)?:)",'regex'=>$regex,'optional'=>true,'name'=>"<$name>/"];
                 } else if (substr($pattern,0,1) === '/') {
                     $regex = substr($pattern,1);
-                    $this->uriParams[$name] = ['pattern'=>"(/(?P<$name>$regex))?",'regex'=>$regex,'optional'=>true,'name'=>"/<$name>"];
+                    $this->uriParams[$name] = ['pattern'=>"(/(?P<$name>$regex))?",'split'=>'left','fist_regex'=>"(?P<$name>:($pattern)?)",'last_regex'=>"(?P<$name>($pattern)?:)",'regex'=>$regex,'optional'=>true,'name'=>"/<$name>"];
                 } else {
-                    $this->uriParams[$name] = ['pattern'=>"(?P<$name>$pattern)?",'regex'=>$pattern,'optional'=>true,'name'=>"<$name>"];
+                    $this->uriParams[$name] = ['pattern'=>"(?P<$name>$pattern)?",'split'=>'','fist_regex'=>"(?P<$name>:($pattern)?)",'last_regex'=>"(?P<$name>($pattern)?:)",'regex'=>$pattern,'optional'=>true,'name'=>"<$name>"];
                 }
             }  else {
-                $this->uriParams[$name] = ['pattern'=>"(?P<$name>$pattern)",'regex'=>$pattern,'optional'=>false,'name'=>"<$name>"];
+                $this->uriParams[$name] = ['pattern'=>"(?P<$name>$pattern)",'split'=>'','fist_regex'=>"(?P<$name>:($pattern))",'last_regex'=>"(?P<$name>($pattern):)",'regex'=>$pattern,'optional'=>false,'name'=>"<$name>"];
             }
 
+            $var_names[] = $name;
         }
+
+        return $var_names;
     }
 
 
@@ -602,30 +656,32 @@ class Rule
      *  返回参数格式:{"controller":"<controller>","action":"<action>"}
      *</pre>
      */
-    private function buildActionParams(string $action):void
+    protected function buildActionParams(string $action):void
     {
 
         if (preg_match_all(self::ACTION_FLAG_REGEX, $action, $matches)) {
             if (!empty($matches[1][0])) {
                 foreach ($matches[1] as $name) {
                     $this->actionParams[$name] = "<$name>";
+                    $this->actionVars[] = $name;
                 }
             }
 
             if (!empty($matches[2][0])) {
                 foreach ($matches[2] as $name) {
                     $this->actionParams[$name] = "<$name>";
+                    $this->actionVars[] = $name;
                 }
             }
         }
     }
 
-    protected function buildFlagName($name):string
+    public function buildVarName($name):string
     {
         return "<{$name}>";
     }
 
-    protected function buildRegex(string $regex,$end = '$#u',$first = '#^'):string
+    public function buildRegex(string $regex,$end = '$#u',$first = '#^'):string
     {
         return $first . $regex . $end;
     }
@@ -633,9 +689,8 @@ class Rule
     protected function buildUri():void
     {
         $this->uri = trim($this->uri,'/');
-        $this->uriRule = trim($this->uriRule,'/');
 
-        $uri = $this->uriRule;
+        $uri = $this->uri;
         // 从uri 提取相关参数
         $this->buildUriParams($uri);
         /** 以下代码生成uri正则表达式 **/
@@ -651,12 +706,22 @@ class Rule
             ')' => '\\)',
         ];
 
-        foreach ($this->uriParams as $name=>$pattern) {
-            if (is_array($pattern)) {
-                $replaceParams[$this->buildFlagName($name)] = $pattern['pattern'];
-            } else {
-                $replaceParams[$this->buildFlagName($name)] = "(?P<$name>$pattern)";
+        $index = 0;
+        $fist_rule = null;
+        $last_rule = null;
+        $uriVarCount = count($this->uriVars);
+        foreach ($this->uriVars as $name) {
+            $pattern = $this->uriParams[$name];
+            if ($index === 0) {
+                $fist_rule = $pattern;
             }
+
+            $replaceParams[$this->buildVarName($name)] = $pattern['pattern'];
+            if (($uriVarCount - 1) == $index) {
+                $last_rule = $pattern;
+            }
+
+            $index++;
         }
 
         $this->urlTemplate = preg_replace([self::URI_FLAG_REGEX1,self::URI_FLAG_REGEX2], ['<$1>','<$1>'], $uri);
@@ -668,6 +733,20 @@ class Rule
         }
 
         $this->uriRegex = $uri_regex;
+
+        // 处理合并路由正则表达式
+        if (!empty($fist_rule) && substr($this->uriRegex,0,strlen($fist_rule['pattern'])) == $fist_rule['pattern']) {
+            $this->uriMergeRegex = str_replace($fist_rule['pattern'],$fist_rule['fist_regex'],$this->uriRegex);
+        } else {
+            $this->uriMergeRegex = ':' . $this->uriRegex;
+        }
+
+        if (!empty($last_rule) && substr($this->uriMergeRegex,-(strlen($last_rule['pattern']))) == $last_rule['pattern']) {
+            $this->uriMergeRegex = str_replace($last_rule['pattern'],$last_rule['last_regex'],$this->uriMergeRegex);
+        } else {
+            $this->uriMergeRegex = $this->uriMergeRegex . ':';
+        }
+
     }
 
     protected function buildAction():void
@@ -677,31 +756,54 @@ class Rule
         }
 
         $this->action = trim($this->action, '/');
-        $this->actionRule = trim($this->actionRule, '/');
-
-        $this->action = preg_replace([self::URI_FLAG_REGEX1,self::URI_FLAG_REGEX2], ['<$1>','<$1>'], $this->action);
-        $this->actionRule = preg_replace([self::URI_FLAG_REGEX1,self::URI_FLAG_REGEX2], ['<$1>','<$1>'], $this->actionRule);
-        $this->actionTemplate = $this->actionRule;
-
-        $action = $this->actionRule;
+        $this->actionTemplate = preg_replace([self::URI_FLAG_REGEX1,self::URI_FLAG_REGEX2], ['<$1>','<$1>'], $this->action);
+        $this->action = $this->actionTemplate;
+        $action = $this->action;
 
         // 从action 提取相关参数
         $this->buildActionParams($action);
 
+        $fist_rule = null;
+        $last_rule = null;
+
         /** 以下代码生成action正则表达式 **/
         $action_regex = '';
-        if (empty($this->actionParams)) {
+        if (empty($this->actionVars)) {
             $action_regex = $action;
         } else {
             $replaceParams = [];
-            foreach ($this->actionParams  as $name=>$value) {
-                $replaceParams[$value] = $this->uriParams[$name]['pattern'];
+            $index = 0;
+            $actionVarCount = count($this->actionVars);
+            foreach ($this->actionVars  as $name) {
+                $pattern = $this->uriParams[$name];
+                $replaceParams[$this->buildVarName($name)] = $pattern['pattern'];
+                if ($index === 0) {
+                    $fist_rule = $pattern;
+                }
+
+                if (($actionVarCount - 1) == $index) {
+                    $last_rule = $pattern;
+                }
             }
 
             $action_regex = strtr($action, $replaceParams);
         }
 
         $this->actionRegex = $action_regex;
+
+
+        // 处理合并路由正则表达式
+        if (!empty($fist_rule) && substr($this->actionRegex,0,strlen($fist_rule['pattern'])) == $fist_rule['pattern']) {
+            $this->actionMergeRegex = str_replace($fist_rule['pattern'],$fist_rule['fist_regex'],$this->actionRegex);
+        } else {
+            $this->actionMergeRegex = ':' . $this->actionRegex;
+        }
+
+        if (!empty($last_rule) && substr($this->actionMergeRegex,-(strlen($last_rule['pattern']))) == $last_rule['pattern']) {
+            $this->actionMergeRegex = str_replace($last_rule['pattern'],$last_rule['last_regex'],$this->actionMergeRegex);
+        } else {
+            $this->actionMergeRegex = $this->actionMergeRegex . ':';
+        }
     }
 
     /**
@@ -797,7 +899,7 @@ class Rule
         }
 
         foreach ($this->uriParams as $name => $value) {
-            $flag_name = $this->buildFlagName($name);
+            $flag_name = $this->buildVarName($name);
             if (!empty($this->pvar) && $name == $this->pvar) {
                 $replaceParams[$flag_name] =  $this->getParamRule()->build($urlParams);
             } else if (isset($urlParams[$name])) {
@@ -835,16 +937,16 @@ class Rule
      * @param string $pathinfo 路由地址 控制器/方法
      * @return array [URL地址,URL 参数]
      */
-    public function parseRequest(string $pathinfo,?RouteRequest $routeRequest = null)
+    public function parseRequest(string $pathinfo,?RouteRequest $routeRequest = null,array $matches = [])
     {
-        $this->init();
-
         if ($this->mode === self::CREATION_ONLY) {
             return false;
         }
 
-        if (!preg_match($this->buildRegex($this->uriRegex,($this->completeMatch ? '$#' : '#')), $pathinfo, $matches)) {
-            return false;
+        if (empty($matches)) {
+            if (!preg_match($this->buildRegex($this->uriRegex,($this->completeMatch ? '$#' : '#')), $pathinfo, $matches)) {
+                return false;
+            }
         }
 
         // 解析匹配结果
@@ -863,19 +965,18 @@ class Rule
      * @param array $params url 参数
      * @return array [URL地址,URL 参数]
      */
-    public function parseUrL(string $url = '',array $params = [])
+    public function parseUrL(string $url = '',array $params = [],array $matches = [])
     {
-        $this->init();
-
         if ($this->mode === self::PARSING_ONLY) {
             return false;
         }
 
         // url 最终替换参数
-        $matches = [];
-        // 匹配url 正则表达式,
-        if ($this->actionRegex == '' || preg_match($this->buildRegex($this->actionRegex), $url, $matches) === 0) {
-            return false;
+        if (empty($matches)) {
+            // 匹配url 正则表达式,
+            if ($this->actionRegex == '' || preg_match($this->buildRegex($this->actionRegex), $url, $matches) === 0) {
+                return false;
+            }
         }
 
         return $this->parseActionMatches($matches,$url,$params);

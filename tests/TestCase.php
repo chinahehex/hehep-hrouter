@@ -15,7 +15,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
     // 单个测试之前(每个测试方法之前调用)
     protected function setUp()
     {
-        $this->hrouter = new RouteManager();
+        //$this->hrouter = new RouteManager();
     }
 
     protected function getRouter():RouteManager
@@ -27,7 +27,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
         return $this->hrouter;
     }
 
-    protected function createRequest(string $url,$method = '',$my_host = '')
+    protected function createRequest(string $url,$method = 'get',$my_host = '')
     {
         $request = new MyRouteReuqest();
         $request->my_url = $url;

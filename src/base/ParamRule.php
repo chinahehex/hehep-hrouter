@@ -53,7 +53,9 @@ abstract class ParamRule
         return $varNames;
     }
 
+    // 解析参数
     abstract public function parse(string $param);
 
+    // 构建参数
     abstract public function build(array &$params);
 }

@@ -5,143 +5,144 @@ use hehe\core\hrouter\RouteManager;
 use hrouter\tests\common\AdminController;
 use hrouter\tests\TestCase;
 
-class ExampleTest extends TestCase
+class RouteTest extends TestCase
 {
     protected function setUp()
     {
-        parent::setUp();
+        // 初始化路由
+        Route::intiRoute();
     }
 
     // 单个测试之后(每个测试方法之后调用)
     protected function tearDown()
     {
-        parent::tearDown();
+        Route::resetRoute();
     }
 
     public function testNoRouter()
     {
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("index/name"));
+        $routerRequest = Route::parseRequest($this->createRequest("index/name"));
         $this->assertTrue($routerRequest->getRouteUrl() == "index/name");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/add?id=1"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/add?id=1"));
         $this->assertTrue($routerRequest->getRouteUrl() == "user/add");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/add/id/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/add/id/1"));
         $this->assertTrue($routerRequest->getRouteUrl() == "user/add/id/1");
     }
 
     public function testAddRule()
     {
-        $this->getRouter()->addRoute("<controller:\w+>/<action:\w+>",'<controller>/<action>');
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/add"));
+        Route::addRoute("<controller:\w+>/<action:\w+>",'<controller>/<action>');
+        $routerRequest = Route::parseRequest($this->createRequest("user/add"));
         $this->assertTrue($routerRequest->getRouteUrl() == "user/add");
     }
 
     public function testRuleParam()
     {
-        $this->getRouter()->addRoute("<controller:\w+>/<id:\d+>",'<controller>/detail');
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/1"));
+        Route::addRoute("<controller:\w+>/<id:\d+>",'<controller>/detail');
+        $routerRequest = Route::parseRequest($this->createRequest("user/1"));
         $this->assertTrue($routerRequest->getRouteUrl() == "user/detail");
 
-        $url = $this->getRouter()->buildUrl('user/detail',['id'=>1]);
+        $url = Route::buildUrl('user/detail',['id'=>1]);
         $this->assertTrue($url == "user/1");
     }
 
     public function testRuleDate()
     {
-        $this->getRouter()->addRoute('news/<year:\d{4}>/<category>','news/<category>');
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/2014/list"));
+        Route::addRoute('news/<year:\d{4}>/<category>','news/<category>');
+        $routerRequest = Route::parseRequest($this->createRequest("news/2014/list"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && $params['year'] == '2014');
 
-        $url = $this->getRouter()->buildUrl('news/list',['year'=>2015]);
+        $url = Route::buildUrl('news/list',['year'=>2015]);
         $this->assertTrue($url == "news/2015/list");
     }
 
     public function testMoreRule()
     {
-        $this->getRouter()->addRoute('<controller:(news|evaluate)>/<id:\d+>/<action:(add|edit|del)>','<controller>/<action>');
+        Route::addRoute('<controller:(news|evaluate)>/<id:\d+>/<action:(add|edit|del)>','<controller>/<action>');
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/1/add"));
+        $routerRequest = Route::parseRequest($this->createRequest("news/1/add"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "news/add" && $params['id'] == '1');
 
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>2]);
+        $url = Route::buildUrl('news/add',['id'=>2]);
         $this->assertTrue($url == "news/2/add");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/1/edit"));
+        $routerRequest = Route::parseRequest($this->createRequest("news/1/edit"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "news/edit" && $params['id'] == '1');
 
-        $url = $this->getRouter()->buildUrl('news/edit',['id'=>2]);
+        $url = Route::buildUrl('news/edit',['id'=>2]);
         $this->assertTrue($url == "news/2/edit");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("evaluate/1/edit"));
+        $routerRequest = Route::parseRequest($this->createRequest("evaluate/1/edit"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "evaluate/edit" && $params['id'] == '1');
 
-        $url = $this->getRouter()->buildUrl('evaluate/edit',['id'=>2]);
+        $url = Route::buildUrl('evaluate/edit',['id'=>2]);
         $this->assertTrue($url == "evaluate/2/edit");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/1/edit"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/1/edit"));
         $this->assertTrue($routerRequest->getRouteUrl() == "user/1/edit");
 
     }
 
     public function testHostRule()
     {
-        $this->getRouter()->addRoute('http://www.hehep.cn/news/<id:\d+>','news/get');
+        Route::addRoute('http://www.hehep.cn/news/<id:\d+>','news/get');
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/1",'','http://www.hehep.cn'));
+        $routerRequest = Route::parseRequest($this->createRequest("news/1",'','http://www.hehep.cn'));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "news/get" && $params['id'] == '1');
-        $url = $this->getRouter()->buildUrl('news/get',['id'=>2]);
+        $url = Route::buildUrl('news/get',['id'=>2]);
         $this->assertTrue($url == "http://www.hehep.cn/news/2");
     }
 
     public function testHost1Rule()
     {
-        $this->getRouter()->addRoute('http://<module:\w+>.hehep.cn/news/<id:\d+>','<module>/news/get');
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/1",'','http://content.hehep.cn'));
+        Route::addRoute('http://<module:\w+>.hehep.cn/news/<id:\d+>','<module>/news/get');
+        $routerRequest = Route::parseRequest($this->createRequest("news/1",'','http://content.hehep.cn'));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "content/news/get" && $params['id'] == '1');
-        $url = $this->getRouter()->buildUrl('content/news/get',['id'=>2]);
+        $url = Route::buildUrl('content/news/get',['id'=>2]);
         $this->assertTrue($url == "http://content.hehep.cn/news/2");
     }
 
     public function testHost2Rule()
     {
-        $this->getRouter()->addRoute('news/<id:\d+>','<module>/news/get')->asDomain("http://<module:\w+>.hehep.cn");
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/1",'','http://content.hehep.cn'));
+        Route::addRoute('news/<id:\d+>','<module>/news/get')->asDomain("http://<module:\w+>.hehep.cn");
+        $routerRequest = Route::parseRequest($this->createRequest("news/1",'','http://content.hehep.cn'));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "content/news/get" && $params['id'] == '1');
-        $url = $this->getRouter()->buildUrl('content/news/get',['id'=>2]);
+        $url = Route::buildUrl('content/news/get',['id'=>2]);
         $this->assertTrue($url == "http://content.hehep.cn/news/2");
     }
 
     public function testHost3Rule()
     {
-        $this->getRouter()->addRoute('news/<id:\d+>','news/get')->asDomain("http://www.hehep.cn");
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/1",'','http://www.hehep.cn'));
+        Route::addRoute('news/<id:\d+>','news/get')->asDomain("http://www.hehep.cn");
+        $routerRequest = Route::parseRequest($this->createRequest("news/1",'','http://www.hehep.cn'));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "news/get" && $params['id'] == '1');
-        $url = $this->getRouter()->buildUrl('news/get',['id'=>2]);
+        $url = Route::buildUrl('news/get',['id'=>2]);
         $this->assertTrue($url == "http://www.hehep.cn/news/2");
     }
 
     public function testHParamRule1()
     {
         // thread-119781-1-1.html
-        $this->getRouter()->addRoute('<controller:\w+>/<action:\w+>/thread-<id:\d+>-<status:\d+>-<type:\d+>','<controller>/<action>');
+        Route::addRoute('<controller:\w+>/<action:\w+>/thread-<id:\d+>-<status:\d+>-<type:\d+>','<controller>/<action>');
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/add/thread-121-1-2"));
+        $routerRequest = Route::parseRequest($this->createRequest("news/add/thread-121-1-2"));
 
         $params = $routerRequest->getRouteParams();
 
         $this->assertTrue($routerRequest->getRouteUrl() == "news/add"
             && $params['id'] == '121' && $params['status'] == '1' && $params['type'] == '2');
 
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>122,'status'=>1,'type'=>1]);
+        $url = Route::buildUrl('news/add',['id'=>122,'status'=>1,'type'=>1]);
 
         $this->assertTrue($url == "news/add/thread-122-1-1");
     }
@@ -152,7 +153,7 @@ class ExampleTest extends TestCase
         //$this->getRouter->register('<controller:\w+>/<action:\w+>/thread<param:(-?.*)>','<controller>/<action>');
 
 
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri'=>'user/list/blog<param:.*>',
             'action'=>'user/list',
             'prule'=>['pvar'=>'param','class'=>'split','names'=>[
@@ -161,34 +162,34 @@ class ExampleTest extends TestCase
                 'type']]
         ]);
 
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri'=>'<controller:\w+>/<action:\w+>/thread<param:.*>',
             'action'=>'<controller>/<action>',
             'prule'=>['pvar'=>'param','class'=>'split','names'=>['id','status','type']]
         ]);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/add/thread-121-1-2"));
+        $routerRequest = Route::parseRequest($this->createRequest("news/add/thread-121-1-2"));
         $params = $routerRequest->getRouteParams();
 
         $this->assertTrue($routerRequest->getRouteUrl() == "news/add"
             && $params['id'] == '121' && $params['status'] == '1' && $params['type'] == '2');
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>122,'status'=>1,'type'=>1]);
+        $url = Route::buildUrl('news/add',['id'=>122,'status'=>1,'type'=>1]);
         $this->assertTrue($url == "news/add/thread-122-1-1");
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/list/blog-122-11-2"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/list/blog-122-11-2"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "user/list"
             && $params['id'] == '122' && $params['status'] == '11' && $params['type'] == '2');
-        $url = $this->getRouter()->buildUrl('user/list',['id'=>122,'status'=>1,'type'=>1]);
+        $url = Route::buildUrl('user/list',['id'=>122,'status'=>1,'type'=>1]);
         $this->assertTrue($url == "user/list/blog-122-1-1");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/list/blog-122-ch-2"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/list/blog-122-ch-2"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "user/list"
             && $params['id'] == '122' && $params['status'] == '1' && $params['type'] == '2');
 
-        $url = $this->getRouter()->buildUrl('user/list',['id'=>122,'status'=>1,'type'=>1]);
+        $url = Route::buildUrl('user/list',['id'=>122,'status'=>1,'type'=>1]);
         $this->assertTrue($url == "user/list/blog-122-1-1");
 
     }
@@ -197,24 +198,24 @@ class ExampleTest extends TestCase
     {
         // thread-119781-1-1.html
         //$this->getRouter->register('<controller:\w+>/<action:\w+>/thread<param:(-?.*)>','<controller>/<action>');
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri'=>'<controller:\w+>/<action:\w+>/thread<param:(.*)>',
             'action'=>'<controller>/<action>',
             'prule'=>['pvar'=>'param','class'=>'split','names'=>['id','status','type'=>"0"]]
         ]);
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/add/thread-121-1-2"));
+        $routerRequest = Route::parseRequest($this->createRequest("news/add/thread-121-1-2"));
         $params = $routerRequest->getRouteParams();
 
         $this->assertTrue($routerRequest->getRouteUrl() == "news/add"
             && $params['id'] == '121' && $params['status'] == '1' && $params['type'] == '2');
 
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>122,'status'=>1,'type'=>1]);
+        $url = Route::buildUrl('news/add',['id'=>122,'status'=>1,'type'=>1]);
         $this->assertTrue($url == "news/add/thread-122-1-1");
 
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>122,'status'=>1]);
+        $url = Route::buildUrl('news/add',['id'=>122,'status'=>1]);
         $this->assertTrue($url == "news/add/thread-122-1-0");
 
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>122,'type'=>1]);
+        $url = Route::buildUrl('news/add',['id'=>122,'type'=>1]);
         $this->assertTrue($url == "news/add/thread-122--1");
 
     }
@@ -223,24 +224,24 @@ class ExampleTest extends TestCase
     {
         // thread-119781-1-1.html
         //$this->getRouter->register('<controller:\w+>/<action:\w+>/thread<param:.*>','<controller>/<action>');
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri'=>'<controller:\w+>/<action:\w+>/thread<param:.*>',
             'action'=>'<controller>/<action>',
             'prule'=>['pvar'=>'param','class'=>'split','names'=>['id','status'=>0,'type'=>"0"]]
         ]);
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/add/thread-121-1-2"));
+        $routerRequest = Route::parseRequest($this->createRequest("news/add/thread-121-1-2"));
         $params = $routerRequest->getRouteParams();
 
         $this->assertTrue($routerRequest->getRouteUrl() == "news/add"
             && $params['id'] == '121' && $params['status'] == '1' && $params['type'] == '2');
 
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>122,'status'=>1,'type'=>1]);
+        $url = Route::buildUrl('news/add',['id'=>122,'status'=>1,'type'=>1]);
         $this->assertTrue($url == "news/add/thread-122-1-1");
 
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>122,'status'=>1]);
+        $url = Route::buildUrl('news/add',['id'=>122,'status'=>1]);
         $this->assertTrue($url == "news/add/thread-122-1-0");
 
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>122,'type'=>1]);
+        $url = Route::buildUrl('news/add',['id'=>122,'type'=>1]);
         $this->assertTrue($url == "news/add/thread-122-0-1");
     }
 
@@ -249,27 +250,27 @@ class ExampleTest extends TestCase
         // 动态参数
         // thread-119781-1-1.html
         //$this->getRouter->register('<controller:\w+>/<action:\w+>/thread<param:(-?.*)>','<controller>/<action>');
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri'=>'<controller:\w+>/<action:\w+>/thread<param:(.*)>',
             'action'=>'<controller>/<action>',
             'prule'=>['pvar'=>'param','class'=>'split','mode'=>'dynamic','names'=>['id','status'=>"0",'type']]
         ]);
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/add/thread-121-1-2"));
+        $routerRequest = Route::parseRequest($this->createRequest("news/add/thread-121-1-2"));
         $params = $routerRequest->getRouteParams();
 
         $this->assertTrue($routerRequest->getRouteUrl() == "news/add"
             && $params['id'] == '121' && $params['status'] == '1' && $params['type'] == '2');
 
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>122,'status'=>1,'type'=>1]);
+        $url = Route::buildUrl('news/add',['id'=>122,'status'=>1,'type'=>1]);
         $this->assertTrue($url == "news/add/thread-122-1-1");
 
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>122,'status'=>1]);
+        $url = Route::buildUrl('news/add',['id'=>122,'status'=>1]);
         $this->assertTrue($url == "news/add/thread-122-1");
 
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>122,'type'=>1]);
+        $url = Route::buildUrl('news/add',['id'=>122,'type'=>1]);
         $this->assertTrue($url == "news/add/thread-122-0-1");
 
-        $url = $this->getRouter()->buildUrl('news/add',['id'=>122]);
+        $url = Route::buildUrl('news/add',['id'=>122]);
         $this->assertTrue($url == "news/add/thread-122");
     }
 
@@ -277,7 +278,7 @@ class ExampleTest extends TestCase
     {
         // user/get/id/1/status/1/type/1/
 
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri'=>'user/list/blog/<param:(.*)>',
             'action'=>'user/list/blog',
             'prule'=>['pvar'=>'param','class'=>'pathinfo','names'=>[
@@ -286,38 +287,38 @@ class ExampleTest extends TestCase
                 'type']]
         ]);
 
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri'=>'<controller:\w+>/<action:\w+>/<param:(.*)>',
             'action'=>'<controller>/<action>',
             'prule'=>['pvar'=>'param','class'=>'pathinfo','names'=>['id','status','type']]
         ]);
 
         //$this->getRouter->register('<controller:\w+>/<action:\w+>/<param:(.*)>','<controller>/<action>');
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/get/id/121/status/1/type/2"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/get/id/121/status/1/type/2"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "user/get"
             && $params['id'] == '121' && $params['status'] == '1' && $params['type'] == '2');
 
-        $url = $this->getRouter()->buildUrl('user/get',['id'=>122,'status'=>1,'type'=>1]);
+        $url = Route::buildUrl('user/get',['id'=>122,'status'=>1,'type'=>1]);
         $this->assertTrue($url == "user/get/id/122/status/1/type/1");
 
-        $url = $this->getRouter()->buildUrl('user/get',['id'=>122,'status'=>1,'type'=>1,'role'=>1]);
+        $url = Route::buildUrl('user/get',['id'=>122,'status'=>1,'type'=>1,'role'=>1]);
         $this->assertTrue($url == "user/get/id/122/status/1/type/1?role=1");
 
-        $url = $this->getRouter()->buildUrl('user/get',['id'=>122,'status'=>1]);
+        $url = Route::buildUrl('user/get',['id'=>122,'status'=>1]);
         $this->assertTrue($url == "user/get/id/122/status/1");
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/list/blog/id/121/status/1/type/2"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/list/blog/id/121/status/1/type/2"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "user/list/blog"
             && $params['id'] == '121' && $params['status'] == '1' && $params['type'] == '2');
 
-        $url = $this->getRouter()->buildUrl('user/list/blog',['id'=>122,'status'=>1,'type'=>1]);
+        $url = Route::buildUrl('user/list/blog',['id'=>122,'status'=>1,'type'=>1]);
         $this->assertTrue($url == "user/list/blog/id/122/status/1/type/1");
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/list/blog/id/121/status/ch/type/2"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/list/blog/id/121/status/ch/type/2"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "user/list/blog"
             && $params['id'] == '121' && $params['status'] == '0' && $params['type'] == '2');
@@ -328,25 +329,25 @@ class ExampleTest extends TestCase
     {
         // user/get/id/1/status/1/type/1/
 
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri'=>'<language:\w+/?><controller:\w+>/<action:\w+>/<id:\d+>',
             'action'=>'<language><controller>/<action>',
             'defaults'=>['language'=>'en'],
         ]);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/get/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/get/1"));
         $params = $routerRequest->getRouteParams();
 
         $this->assertTrue($routerRequest->getRouteUrl() == "user/get"
             && $params['id'] == '1');
 
-        $url = $this->getRouter()->buildUrl('user/get',['id'=>122,'status'=>1,'language'=>'ch']);
+        $url = Route::buildUrl('user/get',['id'=>122,'status'=>1,'language'=>'ch']);
 
 
         $this->assertTrue($url == "ch/user/get/122?status=1");
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/user/get/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("ch/user/get/1"));
         $params = $routerRequest->getRouteParams();
 
 
@@ -354,7 +355,7 @@ class ExampleTest extends TestCase
             && $params['id'] == '1');
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("en/user/get/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("en/user/get/1"));
         $params = $routerRequest->getRouteParams();
 
 
@@ -368,114 +369,116 @@ class ExampleTest extends TestCase
     {
         // user/get/id/1/status/1/type/1/
 
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri'=>'<module:\w+/?><controller:\w+>/<action:\w+>/<id:\d+>',
             'action'=>'<module><controller>/<action>',
             'defaults'=>['language'=>'en']
         ]);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/get/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/get/1"));
         $params = $routerRequest->getRouteParams();
+
         $this->assertTrue($routerRequest->getRouteUrl() == "user/get"
             && $params['id'] == '1');
 
-        $url = $this->getRouter()->buildUrl('user/get',['id'=>122,'status'=>1,'language'=>'ch']);
+        $url = Route::buildUrl('user/get',['id'=>122,'status'=>1,'language'=>'ch']);
         $this->assertTrue($url == "user/get/122?status=1&language=ch");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/user/get/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/user/get/1"));
         $params = $routerRequest->getRouteParams();
 
         $this->assertTrue($routerRequest->getRouteUrl() == "content/user/get"
             && $params['id'] == '1');
 
-        $url = $this->getRouter()->buildUrl('content/user/get',['id'=>122,'status'=>1,'language'=>'ch']);
+        $url = Route::buildUrl('content/user/get',['id'=>122,'status'=>1,'language'=>'ch']);
         $this->assertTrue($url == "content/user/get/122?status=1&language=ch");
 
 
-        $url = $this->getRouter()->buildUrl('user/get',['id'=>122,'status'=>1,'language'=>'ch']);
+        $url = Route::buildUrl('user/get',['id'=>122,'status'=>1,'language'=>'ch']);
         $this->assertTrue($url == "user/get/122?status=1&language=ch");
     }
 
     public function testDuoRule()
     {
 
-        $this->getRouter()->addRoute('user/<action:get|list>','user1/<action>');
-        $this->getRouter()->addRoute('<controller:\w+>/<action:\w+>','<controller>/<action>');
+        Route::addRoute('user/<action:get|list>','user1/<action>');
+        Route::addRoute('<controller:\w+>/<action:\w+>','<controller>/<action>');
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/get"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "user1/get");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/add"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/add"));
         $this->assertTrue($routerRequest->getRouteUrl() == "user/add");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("new/get"));
+        $routerRequest = Route::parseRequest($this->createRequest("new/get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "new/get");
     }
 
     public function testMethodRule()
     {
-        $this->getRouter()->addRoute('user/<action:get|list>','user1/<action>','post');
-        $this->getRouter()->addRoute('user/<action:get|list>','user2/<action>','get');
-        $this->getRouter()->addRoute('user3/<action:get|list>','user3/<action>');
+        Route::addRoute('user/<action:get|list>','user1/<action>','post');
+        Route::addRoute('user/<action:get|list>','user2/<action>','get');
+        Route::addRoute('user3/<action:get|list>','user3/<action>');
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/get",'post'));
+        $routerRequest = Route::parseRequest($this->createRequest("user/get",'post'));
         $this->assertTrue($routerRequest->getRouteUrl() == "user1/get");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/get",'get'));
+        $routerRequest = Route::parseRequest($this->createRequest("user/get",'get'));
         $this->assertTrue($routerRequest->getRouteUrl() == "user2/get");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user3/get"));
+        $routerRequest = Route::parseRequest($this->createRequest("user3/get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "user3/get");
     }
 
     public function testClassRule()
     {
-        $this->getRouter()->addRoute('adminuser/<action:get|list>',AdminController::class .'@<action>');
+        Route::addRoute('adminuser/<action:get|list>',AdminController::class .'@<action>');
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("adminuser/get"));
+        $routerRequest = Route::parseRequest($this->createRequest("adminuser/get"));
         $this->assertTrue($routerRequest->getRouteUrl() == AdminController::class . "@get");
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("adminuser/list"));
+        $routerRequest = Route::parseRequest($this->createRequest("adminuser/list"));
         $this->assertTrue($routerRequest->getRouteUrl() == AdminController::class . "@list");
 
     }
 
     public function testSetFlag()
     {
-        $this->getRouter()->addRoute('user/<id>','user/get');
-        $this->getRouter()->addRoute('role/<id>','role/get')
+        Route::addRoute('user/<id>','user/get');
+        Route::addRoute('role/<id>','role/get')
             ->asParams(["id"=>'\d+']);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/1"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "user/get" && $params["id"] == 1);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/list"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/list"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "user/get" && $params["id"] == "list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("role/1"));
+
+        $routerRequest = Route::parseRequest($this->createRequest("role/1"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "role/get" && $params["id"] == 1);
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("role/list"));
+        $routerRequest = Route::parseRequest($this->createRequest("role/list"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "role/list" && !isset($params["id"]));
     }
 
     public function testWenFlag()
     {
-        $this->getRouter()->addRoute('user<id:/\d+?>','user/get')
+        Route::addRoute('user<id:/\d+?>','user/get')
                                 //->asParams(["id"=>'\d+'])
         ;
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/1"));
         $params = $routerRequest->getRouteParams();
 
         $this->assertTrue($routerRequest->getRouteUrl() == "user/get");
 
-        $url = $this->getRouter()->buildUrl('user/get',['id'=>122]);
+        $url = Route::buildUrl('user/get',['id'=>122]);
 
         $this->assertTrue($url == "user/122");
 
@@ -483,17 +486,17 @@ class ExampleTest extends TestCase
 
     public function testFlag1()
     {
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri'=>'<module?><controller:\w+>/<action:\w+>/<id:\d+>',
             'action'=>'<module><controller>/<action>',
         ])->asParams(["module"=>'\w+/']);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/get/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/get/1"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "user/get"
             && $params['id'] == '1');
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/user/get/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/user/get/1"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "content/user/get"
             && $params['id'] == '1');
@@ -502,22 +505,22 @@ class ExampleTest extends TestCase
 
     public function testFlag2()
     {
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri'=>'<module:?><controller:\w+>/<action:\w+>/<id:\d+?>',
             'action'=>'<module><controller>/<action>',
         ])->asParams(["module"=>'\w+/?']);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/get/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/get/1"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "user/get"
             && $params['id'] == '1');
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/user/get/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/user/get/1"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "content/user/get"
             && $params['id'] == '1');
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/get"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/get"));
         $params = $routerRequest->getRouteParams();
 
         $this->assertTrue($routerRequest->getRouteUrl() == "user/get"
@@ -526,79 +529,79 @@ class ExampleTest extends TestCase
 
     public function testFlag3()
     {
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri' => 'user/<id:\d+?>',
             'action' => 'user/get',
             'id'=>'new_id',
         ]);
 
-        $url = $this->getRouter()->buildUrl('new_id',['id'=>122]);
+        $url = Route::buildUrl('new_id',['id'=>122]);
         $this->assertTrue($url == "user/122");
 
-        $url = $this->getRouter()->buildUrl('user/get',['id'=>122]);
+        $url = Route::buildUrl('user/get',['id'=>122]);
         $this->assertTrue($url == "user/122");
 
     }
 
     public function testOptions()
     {
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri' => 'user/{id:\d+?}',
             'action' => 'user/get',
         ])->asSuffix();
 
-        $this->getRouter()->addRoute([
+        Route::addRoute([
             'uri' => 'http://www.baidu.com/news/<id:\d+?>',
             'action' => 'news/get',
         ])->asSuffix();
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("user/get/1"));
+        $routerRequest = Route::parseRequest($this->createRequest("user/get/1"));
 
-        $url = $this->getRouter()->buildUrl('user/get',['id'=>122]);
+        $url = Route::buildUrl('user/get',['id'=>122]);
         $this->assertTrue($url == "user/122.html");
 
-        $url = $this->getRouter()->buildUrl('user/get.html',['id'=>122]);
+        $url = Route::buildUrl('user/get.html',['id'=>122]);
         $this->assertTrue($url == "user/122.html");
 
-        $url = $this->getRouter()->buildUrl('user/get',['id'=>122],['suffix'=>'htmls']);
+        $url = Route::buildUrl('user/get',['id'=>122],['suffix'=>'htmls']);
         $this->assertTrue($url == "user/122.htmls");
 
-        $url = $this->getRouter()->buildUrl('news/get',['id'=>122]);
+        $url = Route::buildUrl('news/get',['id'=>122]);
         $this->assertTrue($url == "http://www.baidu.com/news/122.html");
     }
 
     public function testRestful()
     {
-        $this->getRouter()->get("blog","blog/index");
-        $this->getRouter()->get("blog/create","blog/create");
-        $this->getRouter()->post("blog","blog/save");
-        $this->getRouter()->get("blog/{id:\d+}","blog/read");
-        $this->getRouter()->get("blog/<id:\d+>/edit","blog/edit");
-        $this->getRouter()->put("blog/<id:\d+>","blog/update");
-        $this->getRouter()->delete("blog/<id:\d+>","blog/delete");
+        Route::get("blog","blog/index");
+        Route::get("blog/create","blog/create");
+        Route::post("blog","blog/save");
+        Route::get("blog/{id:\d+}","blog/read");
+        Route::get("blog/<id:\d+>/edit","blog/edit");
+        Route::put("blog/<id:\d+>","blog/update");
+        Route::delete("blog/<id:\d+>","blog/delete");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/index");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/create","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/create","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/create");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog","post"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog","post"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/save");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/1","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/1","get"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/read" && $params['id'] == 1);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/1/edit","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/1/edit","get"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/edit" && $params['id'] == 1);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/1","put"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/1","put"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/update" && $params['id'] == 1);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/1","delete"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/1","delete"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/delete" && $params['id'] == 1);
     }
@@ -612,20 +615,20 @@ class ExampleTest extends TestCase
             Route::get("add","blog/doadd");
         })->asParams(["id"=>"\d+"]);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/list");
 
-        $this->assertTrue($this->getRouter()->buildUrL("blog/list") == "blog/list");
+        $this->assertTrue(Route::buildUrL("blog/list") == "blog/list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/1","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/get/1","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/get",($routerRequest->getRouteParams())['id'] == 1);
-        $this->assertTrue($this->getRouter()->buildUrL("blog/get",["id"=>2]) == "blog/get/2");
+        $this->assertTrue(Route::buildUrL("blog/get",["id"=>2]) == "blog/get/2");
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/add","post"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/add","post"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/doadd");
 
-        $this->assertTrue($this->getRouter()->buildUrL("blog/doadd") == "blog/add");
+        $this->assertTrue(Route::buildUrL("blog/doadd") == "blog/add");
     }
 
     public function testGroup1()
@@ -636,19 +639,19 @@ class ExampleTest extends TestCase
             Route::get("add","blog/doadd")->asSuffix("shtml");
         })->asParams(["id"=>"\d+"])->asSuffix("html");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/list");
-        $this->assertTrue($this->getRouter()->buildUrL("blog/list") == "blog/list.html");
+        $this->assertTrue(Route::buildUrL("blog/list") == "blog/list.html");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/1","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/get/1","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/get",($routerRequest->getRouteParams())['id'] == 1);
-        $this->assertTrue($this->getRouter()->buildUrL("blog/get",["id"=>2]) == "blog/get/2.html");
+        $this->assertTrue(Route::buildUrL("blog/get",["id"=>2]) == "blog/get/2.html");
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/add","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/add","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/doadd");
 
-        $this->assertTrue($this->getRouter()->buildUrL("blog/doadd") == "blog/add.shtml");
+        $this->assertTrue(Route::buildUrL("blog/doadd") == "blog/add.shtml");
     }
 
     public function testGroup2()
@@ -659,23 +662,22 @@ class ExampleTest extends TestCase
             Route::get("add","doadd")->asSuffix("shtml");
         })->asMethod("get")->asPrefix("blog/")->asParams(["id"=>"\d+"])->asSuffix("html");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/list");
-        $this->assertTrue($this->getRouter()->buildUrL("blog/list") == "blog/list.html");
+        $this->assertTrue(Route::buildUrL("blog/list") == "blog/list.html");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/1","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/get/1","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/get",($routerRequest->getRouteParams())['id'] == 1);
-        $this->assertTrue($this->getRouter()->buildUrL("blog/get",["id"=>2]) == "blog/get/2.html");
+        $this->assertTrue(Route::buildUrL("blog/get",["id"=>2]) == "blog/get/2.html");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/add","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/add","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/doadd");
-        $this->assertTrue($this->getRouter()->buildUrL("blog/doadd") == "blog/add.shtml");
+        $this->assertTrue(Route::buildUrL("blog/doadd") == "blog/add.shtml");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/bxd","get"));
-        var_dump($routerRequest->getRouteUrl());
+        $routerRequest = Route::parseRequest($this->createRequest("blog/bxd","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/bxd");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/2","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/get/2","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/get",($routerRequest->getRouteParams())['id'] == 2);
 
 
@@ -689,42 +691,42 @@ class ExampleTest extends TestCase
             Route::get("blog/add","doadd")->asSuffix("shtml");
         })->asPrefix("blog/")->asParams(["id"=>"\d+"])->asSuffix("html");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/list");
-        $this->assertTrue($this->getRouter()->buildUrL("blog/list") == "blog/list.html");
+        $this->assertTrue(Route::buildUrL("blog/list") == "blog/list.html");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/1","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/get/1","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/get",($routerRequest->getRouteParams())['id'] == 1);
-        $this->assertTrue($this->getRouter()->buildUrL("blog/get",["id"=>2]) == "blog/get/2.html");
+        $this->assertTrue(Route::buildUrL("blog/get",["id"=>2]) == "blog/get/2.html");
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/add","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/add","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/doadd");
 
-        $this->assertTrue($this->getRouter()->buildUrL("blog/doadd") == "blog/add.shtml");
+        $this->assertTrue(Route::buildUrL("blog/doadd") == "blog/add.shtml");
     }
 
     public function testRouterGroup()
     {
-        $this->getRouter()->addGroup("blog",function(){
+        Route::addGroup("blog",function(){
             Route::addRoute("list","list");
             Route::get("get/<id>","get");
             Route::get("add","doadd")->asSuffix("shtml");
         })->asPrefix("blog/")->asParams(["id"=>"\d+"])->asSuffix("html");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/list");
-        $this->assertTrue($this->getRouter()->buildUrL("blog/list") == "blog/list.html");
+        $this->assertTrue(Route::buildUrL("blog/list") == "blog/list.html");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/1","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/get/1","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/get",($routerRequest->getRouteParams())['id'] == 1);
-        $this->assertTrue($this->getRouter()->buildUrL("blog/get",["id"=>2]) == "blog/get/2.html");
+        $this->assertTrue(Route::buildUrL("blog/get",["id"=>2]) == "blog/get/2.html");
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/add","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/add","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/doadd");
 
-        $this->assertTrue($this->getRouter()->buildUrL("blog/doadd") == "blog/add.shtml");
+        $this->assertTrue(Route::buildUrL("blog/doadd") == "blog/add.shtml");
     }
 
     public function testFlagGroup()
@@ -739,29 +741,29 @@ class ExampleTest extends TestCase
             ->asSuffix("html")
         ;
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/blog/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/blog/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/list");
 
-        $this->assertTrue($this->getRouter()->buildUrL("content/blog/list") == "content/blog/list.html");
+        $this->assertTrue(Route::buildUrL("content/blog/list") == "content/blog/list.html");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/blog/get/1","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/blog/get/1","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/get",($routerRequest->getRouteParams())['id'] == 1);
 
-        $this->assertTrue($this->getRouter()->buildUrL("content/blog/get",["id"=>2]) == "content/blog/get/2.html");
+        $this->assertTrue(Route::buildUrL("content/blog/get",["id"=>2]) == "content/blog/get/2.html");
 
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/blog/add","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/blog/add","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/doadd");
-        $this->assertTrue($this->getRouter()->buildUrL("content/blog/doadd") == "content/blog/add.shtml");
+        $this->assertTrue(Route::buildUrL("content/blog/doadd") == "content/blog/add.shtml");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/blog/bxd","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/blog/bxd","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/bxd");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/blog/get/2","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/blog/get/2","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/get",($routerRequest->getRouteParams())['id'] == 2);
 
-        $this->assertTrue($this->getRouter()->buildUrL("content/blog/bxd") == "content/blog/bxd.html");
+        $this->assertTrue(Route::buildUrL("content/blog/bxd") == "content/blog/bxd.html");
 
     }
 
@@ -779,26 +781,26 @@ class ExampleTest extends TestCase
             ->asSuffix("html")
             ->asMergeRule(5);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/blog/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/blog/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/list");
 
-        $this->assertTrue($this->getRouter()->buildUrL("content/blog/list") == "content/blog/list.html");
+        $this->assertTrue(Route::buildUrL("content/blog/list") == "content/blog/list.html");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/blog/get/1","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/blog/get/1","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/get",($routerRequest->getRouteParams())['id'] == 1);
 
-        $this->assertTrue($this->getRouter()->buildUrL("content/blog/get",["id"=>2]) == "content/blog/get/2.html");
+        $this->assertTrue(Route::buildUrL("content/blog/get",["id"=>2]) == "content/blog/get/2.html");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/blog/add","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/blog/add","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/doadd");
-        $this->assertTrue($this->getRouter()->buildUrL("content/blog/doadd") == "content/blog/add.shtml");
+        $this->assertTrue(Route::buildUrL("content/blog/doadd") == "content/blog/add.shtml");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/blog/bxd","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/blog/bxd","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/bxd");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("content/blog/get/2","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("content/blog/get/2","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "content/blog/get",($routerRequest->getRouteParams())['id'] == 2);
-        $this->assertTrue($this->getRouter()->buildUrL("content/blog/bxd") == "content/blog/bxd.html");
+        $this->assertTrue(Route::buildUrL("content/blog/bxd") == "content/blog/bxd.html");
 
     }
 
@@ -809,13 +811,13 @@ class ExampleTest extends TestCase
             Route::get("get/<id>","get");
         })->asAction("blog")->asPrefix("blog/")->asParams(["id"=>"\d+"]);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/list");
-        $this->assertTrue($this->getRouter()->buildUrL("blog/list") == "blog/list");
+        $this->assertTrue(Route::buildUrL("blog/list") == "blog/list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/2","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/get/2","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/get" && ($routerRequest->getRouteParams())["id"] == 2);
-        $this->assertTrue($this->getRouter()->buildUrL("blog/get",["id"=>2]) == "blog/get/2");
+        $this->assertTrue(Route::buildUrL("blog/get",["id"=>2]) == "blog/get/2");
     }
 
     public function testEmptyGroup1()
@@ -824,13 +826,13 @@ class ExampleTest extends TestCase
             Route::get("get/<id>","get");
         })->asAction("blog/index")->asPrefix("blog/")->asParams(["id"=>"\d+"]);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/index/list");
-        $this->assertTrue($this->getRouter()->buildUrL("blog/index/list") == "blog/list");
+        $this->assertTrue(Route::buildUrL("blog/index/list") == "blog/list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/2","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/get/2","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/get" && ($routerRequest->getRouteParams())["id"] == 2);
-        $this->assertTrue($this->getRouter()->buildUrL("blog/get",["id"=>2]) == "blog/get/2");
+        $this->assertTrue(Route::buildUrL("blog/get",["id"=>2]) == "blog/get/2");
     }
 
     public function testEmptyGroup2()
@@ -839,17 +841,17 @@ class ExampleTest extends TestCase
             Route::get("get/<id>","get");
         })->asAction("/blog/index")->asPrefix("blog/")->asParams(["id"=>"\d+"]);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/index");
-        $this->assertTrue($this->getRouter()->buildUrL("blog/index") == "blog");
+        $this->assertTrue(Route::buildUrL("blog/index") == "blog");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/index");
-        $this->assertTrue($this->getRouter()->buildUrL("blog/index") == "blog");
+        $this->assertTrue(Route::buildUrL("blog/index") == "blog");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("blog/get/2","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("blog/get/2","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "blog/get" && ($routerRequest->getRouteParams())["id"] == 2);
-        $this->assertTrue($this->getRouter()->buildUrL("blog/get",["id"=>2]) == "blog/get/2");
+        $this->assertTrue(Route::buildUrL("blog/get",["id"=>2]) == "blog/get/2");
     }
 
     public function testDomainGroup()
@@ -859,13 +861,13 @@ class ExampleTest extends TestCase
             Route::get("news/get/<id:\d+>","news/get");
         });
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/list","get","http://www.hehex.cn"));
+        $routerRequest = Route::parseRequest($this->createRequest("news/list","get","http://www.hehex.cn"));
         $this->assertTrue($routerRequest->getRouteUrl() == "news/list");
-        $this->assertTrue($this->getRouter()->buildUrL("news/list") == "http://www.hehex.cn/news/list");
+        $this->assertTrue(Route::buildUrL("news/list") == "http://www.hehex.cn/news/list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/get/2","get","http://www.hehex.cn"));
+        $routerRequest = Route::parseRequest($this->createRequest("news/get/2","get","http://www.hehex.cn"));
         $this->assertTrue($routerRequest->getRouteUrl() == "news/get");
-        $this->assertTrue($this->getRouter()->buildUrL("news/get",['id'=>2]) == "http://www.hehex.cn/news/get/2");
+        $this->assertTrue(Route::buildUrL("news/get",['id'=>2]) == "http://www.hehex.cn/news/get/2");
 
     }
 
@@ -876,14 +878,14 @@ class ExampleTest extends TestCase
             Route::get("news/get/<id:\d+>","news/get");
         })->asDefaults(['ssl'=>'http']);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/list","get","http://www.hehex.cn"));
+        $routerRequest = Route::parseRequest($this->createRequest("news/list","get","http://www.hehex.cn"));
         $this->assertTrue($routerRequest->getRouteUrl() == "news/list");
-        $this->assertTrue($this->getRouter()->buildUrL("news/list") == "http://www.hehex.cn/news/list");
+        $this->assertTrue(Route::buildUrL("news/list") == "http://www.hehex.cn/news/list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/get/2","get","http://www.hehex.cn"));
+        $routerRequest = Route::parseRequest($this->createRequest("news/get/2","get","http://www.hehex.cn"));
         $this->assertTrue($routerRequest->getRouteUrl() == "news/get");
-        $this->assertTrue($this->getRouter()->buildUrL("news/get",['id'=>2]) == "http://www.hehex.cn/news/get/2");
-        $this->assertTrue($this->getRouter()->buildUrL("news/get",['id'=>2,"ssl"=>"https"]) == "https://www.hehex.cn/news/get/2");
+        $this->assertTrue(Route::buildUrL("news/get",['id'=>2]) == "http://www.hehex.cn/news/get/2");
+        $this->assertTrue(Route::buildUrL("news/get",['id'=>2,"ssl"=>"https"]) == "https://www.hehex.cn/news/get/2");
     }
 
     public function testDefaultVar()
@@ -891,12 +893,12 @@ class ExampleTest extends TestCase
         Route::get("<language:\w+>/news/list","news/list")
             ->asDefaults(['language'=>'ch']);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("en/news/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("en/news/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'en');
-        $this->assertTrue($this->getRouter()->buildUrL("news/list") == "ch/news/list");
+        $this->assertTrue(Route::buildUrL("news/list") == "ch/news/list");
 
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/news/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("ch/news/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'ch');
 
     }
@@ -914,40 +916,40 @@ class ExampleTest extends TestCase
         Route::get("<language:\w+/?>role/get<id:/\d+?>","role/get")
             ->asDefaults(['language'=>'ch']);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("en/news/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("en/news/list","get"));
 
         $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'en');
-        $this->assertTrue($this->getRouter()->buildUrL("news/list") == "news/list");
+        $this->assertTrue(Route::buildUrL("news/list") == "news/list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/news/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("ch/news/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'ch');
 
-//        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/role/get/1","get"));
-//        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/news/list","get"));
+//        $routerRequest = Route::parseRequest($this->createRequest("ch/role/get/1","get"));
+//        $routerRequest = Route::parseRequest($this->createRequest("ch/news/list","get"));
 
         $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'ch');
-        $this->assertTrue($this->getRouter()->buildUrL("news/list",["language"=>'ch']) == "news/list");
-        $this->assertTrue($this->getRouter()->buildUrL("news/list",["language"=>'en']) == "en/news/list");
-        $this->assertTrue($this->getRouter()->buildUrL("news/list") == "news/list");
+        $this->assertTrue(Route::buildUrL("news/list",["language"=>'ch']) == "news/list");
+        $this->assertTrue(Route::buildUrL("news/list",["language"=>'en']) == "en/news/list");
+        $this->assertTrue(Route::buildUrL("news/list") == "news/list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("en/abc/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("en/abc/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "en/abc/plist");
 
-        $this->assertTrue($this->getRouter()->buildUrL("abc/plist",["lang"=>'en']) == "en/abc/list");
-        $this->assertTrue($this->getRouter()->buildUrL("en/abc/plist") == "en/abc/list");
+        $this->assertTrue(Route::buildUrL("abc/plist",["lang"=>'en']) == "en/abc/list");
+        $this->assertTrue(Route::buildUrL("en/abc/plist") == "en/abc/list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/abc/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("ch/abc/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "abc/plist");
 
-        $this->assertTrue($this->getRouter()->buildUrL("abc/plist",["lang"=>'ch']) == "abc/list");
-        $this->assertTrue($this->getRouter()->buildUrL("ch/abc/plist") == "abc/list");
+        $this->assertTrue(Route::buildUrL("abc/plist",["lang"=>'ch']) == "abc/list");
+        $this->assertTrue(Route::buildUrL("ch/abc/plist") == "abc/list");
     }
 
     public function testDateVar()
     {
         Route::get("news/list/<year:\d{4}>/<month:\d{2}>/<day:\d{2}>", "news/list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("news/list/2024/07/05","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("news/list/2024/07/05","get"));
         $params = $routerRequest->getRouteParams();
         $this->assertTrue($routerRequest->getRouteUrl() == "news/list"
             && $params['year'] == '2024' && $params['month'] == '07') && $params['day'] == '05';
@@ -964,33 +966,33 @@ class ExampleTest extends TestCase
 
         Route::get("<language:\w+/?>role/get<id:/\d+?>","role/get")
             ->asDefaults(['language'=>'ch']);
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("en/news/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("en/news/list","get"));
 
         $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'en');
-        $this->assertTrue($this->getRouter()->buildUrL("news/list") == "news/list");
+        $this->assertTrue(Route::buildUrL("news/list") == "news/list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/news/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("ch/news/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'ch');
 
-//        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/role/get/1","get"));
-//        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/news/list","get"));
+//        $routerRequest = Route::parseRequest($this->createRequest("ch/role/get/1","get"));
+//        $routerRequest = Route::parseRequest($this->createRequest("ch/news/list","get"));
 
         $this->assertTrue($routerRequest->getRouteUrl() == "news/list" && ($routerRequest->getRouteParams())['language'] == 'ch');
-        $this->assertTrue($this->getRouter()->buildUrL("news/list",["language"=>'ch']) == "news/list");
-        $this->assertTrue($this->getRouter()->buildUrL("news/list",["language"=>'en']) == "en/news/list");
-        $this->assertTrue($this->getRouter()->buildUrL("news/list") == "news/list");
+        $this->assertTrue(Route::buildUrL("news/list",["language"=>'ch']) == "news/list");
+        $this->assertTrue(Route::buildUrL("news/list",["language"=>'en']) == "en/news/list");
+        $this->assertTrue(Route::buildUrL("news/list") == "news/list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("en/abc/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("en/abc/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "en/abc/plist");
 
-        $this->assertTrue($this->getRouter()->buildUrL("abc/plist",["lang"=>'en']) == "en/abc/list");
-        $this->assertTrue($this->getRouter()->buildUrL("en/abc/plist") == "en/abc/list");
+        $this->assertTrue(Route::buildUrL("abc/plist",["lang"=>'en']) == "en/abc/list");
+        $this->assertTrue(Route::buildUrL("en/abc/plist") == "en/abc/list");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("ch/abc/list","get"));
+        $routerRequest = Route::parseRequest($this->createRequest("ch/abc/list","get"));
         $this->assertTrue($routerRequest->getRouteUrl() == "abc/plist");
 
-        $this->assertTrue($this->getRouter()->buildUrL("abc/plist",["lang"=>'ch']) == "abc/list");
-        $this->assertTrue($this->getRouter()->buildUrL("ch/abc/plist") == "abc/list");
+        $this->assertTrue(Route::buildUrL("abc/plist",["lang"=>'ch']) == "abc/list");
+        $this->assertTrue(Route::buildUrL("ch/abc/plist") == "abc/list");
     }
 
 

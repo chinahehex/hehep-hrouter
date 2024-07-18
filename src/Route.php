@@ -8,14 +8,14 @@ use hehe\core\hrouter\base\Rule;
 
 class Route
 {
-    const GET_RULE_METHOD = 'get';
-    const POST_RULE_METHOD = 'post';
-    const PUT_RULE_METHOD = 'put';
-    const DELETE_RULE_METHOD = 'delete';
-    const PATCH_RULE_METHOD = 'patch';
-    const HEAD_RULE_METHOD = 'head';
-    const ANY_RULE_METHOD = '*';
-    const DEFAULT_RULE_METHOD = '*';
+    const GET_METHOD = 'get';
+    const POST_METHOD = 'post';
+    const PUT_METHOD = 'put';
+    const DELETE_METHOD = 'delete';
+    const PATCH_METHOD = 'patch';
+    const HEAD_METHOD = 'head';
+    const ANY_METHOD = '*';
+    const DEFAULT_METHOD = '*';
 
     /**
      * 路由规则定义
@@ -48,7 +48,7 @@ class Route
      * @param array $options
      * @return Rule
      */
-    public static function addRoute(string $uri = '',string $action = '',string $method = self::ANY_RULE_METHOD,array $options = []):Rule
+    public static function addRoute($uri = '',string $action = '',string $method = self::ANY_METHOD,array $options = []):Rule
     {
         $rule = RouteManager::createRule($uri,$action,$method,$options);
         static::register($rule);
@@ -59,7 +59,7 @@ class Route
     public static function register($rule)
     {
         if (!is_null(static::$currentGroup)) {
-            static::$currentGroup->addRule($rule);
+            static::$currentGroup->addSubRule($rule);
         } else if (!is_null(static::$routeManager)) {
             static::$routeManager->register($rule);
         } else {
@@ -69,37 +69,37 @@ class Route
 
     public static function get(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,self::GET_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::GET_METHOD,$options);
     }
 
     public static function post(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,self::POST_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::POST_METHOD,$options);
     }
 
     public static function put(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,self::PUT_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::PUT_METHOD,$options);
     }
 
     public static function patch(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,self::PATCH_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::PATCH_METHOD,$options);
     }
 
     public static function delete(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,self::DELETE_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::DELETE_METHOD,$options);
     }
 
     public static function head(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,self::HEAD_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::HEAD_METHOD,$options);
     }
 
     public static function any(string $uri = '',string $action = '',array $options = [])
     {
-        return static::addRoute($uri,$action,self::ANY_RULE_METHOD,$options);
+        return static::addRoute($uri,$action,self::ANY_METHOD,$options);
     }
 
     /**
@@ -155,13 +155,28 @@ class Route
         return RouteManager::createGroup($uri,$callable);
     }
 
-    public static function intiRoute($route = ''):void
+    public static function intiRoute($route = ''):?RouteManager
     {
+        if (is_null($route)) {
+            static::resetRoute();
+            return null;
+        }
+
         if ($route instanceof RouteManager) {
             static::$routeManager = $route;
         } else {
             static::$routeManager = RouteManager::make($route);
         }
+
+        return static::$routeManager;
+    }
+
+    public static function resetRoute():void
+    {
+        static::$routeManager = null;
+        static::$rules = [];
+
+        return;
     }
 
     public static function parseRequest($routeRequest = null):RouteRequest

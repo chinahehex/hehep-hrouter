@@ -1,25 +1,26 @@
 <?php
-namespace hehe\core\hrouter\fast;
+namespace hehe\core\hrouter\routine;
 
 use hehe\core\hrouter\base\GroupRule;
 use hehe\core\hrouter\base\Router;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
-use hehe\core\hrouter\base\RuleCollector;
 use hehe\core\hrouter\Route;
 
 /**
- * 快速路由解析器
+ * 常规路由解析器
  *<B>说明：</B>
  *<pre>
  *  解析url，解析类型有:路由规则，url映射，子域名映射
  *  此路由采用正则表达式处理，灵活，因此可能会存在性能问题
  *</pre>
+ *<B>示例：</B>
+ *<pre>
+ * 略
+ *</pre>
  */
-class FastRouter extends Router
+class RoutineRouter extends Router
 {
-
-    protected $collectorClass = RuleCollector::class;
 
     /**
      * 构造方法
@@ -34,6 +35,13 @@ class FastRouter extends Router
         parent::__construct($attrs);
     }
 
+    public function runCallable(GroupRule $rule)
+    {
+        $rule->asFalseGroup(true);
+        $rule->runCallable();
+    }
+
+
     /**
      * 添加路由规则
      *<B>说明：</B>
@@ -45,19 +53,20 @@ class FastRouter extends Router
      */
     public function addRule(Rule $rule):void
     {
-
         $rule_methods = $rule->getMethods();
         if (empty($rule_methods)) {
             $rule_methods[] = Route::DEFAULT_METHOD;
         }
 
-        if (!$rule->hasInitStatus()) {
-            // 路由规则未初始化
-            if ($this->lazy) {
-                $this->getCollector()->addRule($rule,$rule_methods);
-            } else {
-                $rule->init();
-            }
+        $this->ruleCollector->addRule($rule,$rule_methods);
+    }
+
+    protected function getMethodRules(string $method):array
+    {
+        if (isset($this->rules[$method])) {
+            return $this->rules[$method];
+        } else {
+            return [];
         }
     }
 
@@ -75,16 +84,10 @@ class FastRouter extends Router
     {
         $matchResult = false;
 
-        // 执行常量路由
-        $constantUriRules = $this->getCollector()->getConstantUriRules($routeRequest);
-        if (!empty($constantUriRules)) {
-            $matchResult = $this->matchUriRules($constantUriRules,$routeRequest);
-        }
-
         $request_method = $routeRequest->getMethod();
         if ($matchResult === false) {
-            foreach ([$request_method,Route::ANY_METHOD] as $method) {
-                $rules = $this->getCollector()->getVarUriRules($routeRequest,$method);
+            foreach ([$request_method, Route::ANY_METHOD] as $method) {
+                $rules = $this->ruleCollector->getRules($method);
                 if ($this->mergeRule) {
                     $matchResult = $this->matchMergeUriRules($rules,$routeRequest,'uri.' .$method,$this->mergeLen);
                 } else {
@@ -141,8 +144,8 @@ class FastRouter extends Router
      * @param array $options url 配置
      * @return string
      */
-    public function buildUrL(string $uri = '',array $params = [],array $options = [])
-    {
+	public function buildUrL(string $uri = '',array $params = [],array $options = [])
+	{
         $anchor = isset($params['#']) ? '#' . $params['#'] : '';
         unset($params['#']);
 
@@ -154,18 +157,16 @@ class FastRouter extends Router
 
         // 查找域名
         $matchResult = false;
-
-        // 执行常量路由
-        $constantActionRules = $this->getCollector()->getConstantActionRules($uri);
-        if (!empty($constantActionRules)) {
-            $matchResult = $this->matchActionRules($constantActionRules,($constantActionRules[0])->getAction(),$params);
+        $staticActionRule = $this->ruleCollector->getConstantActionRule($uri);
+        if (!is_null($staticActionRule)) {
+            $matchResult = $this->matchActionRules([$staticActionRule],$staticActionRule->getAction(),$params);
         }
 
         if ($matchResult === false) {
             foreach ([Route::GET_METHOD, Route::ANY_METHOD] as $method) {
-                $rules = $this->getCollector()->getVarActionRules($method);
+                $rules = $this->ruleCollector->getRules($method);
                 if ($this->mergeRule) {
-                    $matchResult = $this->matchMergeActionRules($rules,$uri,$params,'act.'.$method,$this->mergeLen);
+                    $matchResult = $this->matchMergeActionRules($rules,$uri,$params,"act." . $method,$this->mergeLen);
                 } else {
                     $matchResult = $this->matchActionRules($rules,$uri,$params);
                 }
@@ -175,7 +176,6 @@ class FastRouter extends Router
                 }
             }
         }
-
 
         $url = "";
         $matchRule = null;
@@ -210,7 +210,7 @@ class FastRouter extends Router
         $url .= $anchor;
 
         return $url;
-    }
+	}
 
 
 

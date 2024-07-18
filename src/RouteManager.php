@@ -25,18 +25,6 @@ class RouteManager
     public $rules = [];
 
     /**
-     * 当前的分组对象
-     * @var GroupRule
-     */
-    protected $currentGroup;
-
-    /**
-     * 默认路由
-     * @var string
-     */
-    protected $defaultRouter = 'FastRouter';
-
-    /**
      * 路由解析器定义
      *<B>说明：</B>
      *<pre>
@@ -47,10 +35,17 @@ class RouteManager
     public $customRouter = [
         // 路由类
         'class'=>FastRouter::class,
+        //'class'=>RoutineRouter::class,
         // url 是否加入上后缀
         'suffix'=>false,// url 地址后缀
         // url 是否加入域名
-        'domain'=>false,// 生产url 地址时是否显示域名
+        'domain'=>false,// 生产url 地址时是否显示域名,
+        // 是否合并路由解析
+        'mergeRule'=>false,
+        // 一次合并的条数
+        'mergeLen'=>0,
+        // 是否延迟加载规则
+        'lazy'=>true,
     ];
 
     /**
@@ -76,16 +71,6 @@ class RouteManager
     protected $_router;
 
     /**
-     * 路由请求类名
-     *<B>说明：</B>
-     *<pre>
-     *  略
-     *</pre>
-     * @var string
-     */
-    protected $_routeRequestClass = '';
-
-    /**
      * 构造方法
      *<B>说明：</B>
      *<pre>
@@ -102,7 +87,10 @@ class RouteManager
         }
     }
 
-    protected function initRules()
+    /**
+     * 路由规则注入路由解析器
+     */
+    protected function injectRules()
     {
         /** @var Rule[] $rules */
         $rules = [];
@@ -117,11 +105,12 @@ class RouteManager
         }
 
         foreach ($rules as $rule) {
-            $rule->setRouter($this->getRouter());
+            $router = $this->getRouter();
+            $rule->setRouter($router);
             if ($rule instanceof GroupRule) {
-                $rule->runCallable();
+                $router->runCallable($rule);
             } else {
-                $this->getRouter()->addRule($rule);
+                $router->addRule($rule);
             }
         }
     }
@@ -134,7 +123,7 @@ class RouteManager
      * @param array $options
      * @return Rule
      */
-    public function addRoute($uri = '',string $action = '',string $method = Route::ANY_RULE_METHOD,array $options = []):Rule
+    public function addRoute($uri = '',string $action = '',string $method = Route::ANY_METHOD,array $options = []):Rule
     {
         $rule = static::createRule($uri,$action,$method,$options);
         $this->register($rule);
@@ -149,37 +138,37 @@ class RouteManager
 
     public function get(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,Route::GET_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::GET_METHOD,$options);
     }
 
     public function post(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,Route::POST_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::POST_METHOD,$options);
     }
 
     public function put(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,Route::PUT_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::PUT_METHOD,$options);
     }
 
     public function patch(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,Route::PATCH_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::PATCH_METHOD,$options);
     }
 
     public function delete(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,Route::DELETE_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::DELETE_METHOD,$options);
     }
 
     public function head(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,Route::HEAD_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::HEAD_METHOD,$options);
     }
 
     public function any(string $uri = '',string $action = '',array $options = [])
     {
-        return $this->addRoute($uri,$action,Route::ANY_RULE_METHOD,$options);
+        return $this->addRoute($uri,$action,Route::ANY_METHOD,$options);
     }
 
 
@@ -206,7 +195,7 @@ class RouteManager
      *</pre>
      * @return Router
      */
-    public function getRouter(string $router_key = ''):Router
+    public function getRouter():Router
     {
 
         if (!is_null($this->_router)) {
@@ -224,19 +213,27 @@ class RouteManager
 
         /** @var Router $router */
         $router = new $routerClass($router_config);
-
         $this->_router = $router;
 
-        return $router;
+        return $this->_router;
     }
 
     /**
      * 设置路由解析器配置
      * @param array $routerConfig 路由解析器配置
      */
-    public function setRouterConfig(?array $routerConfig = []):void
+    public function setRouterConfig(?array $routerConfig = []):self
     {
         $this->customRouter = $routerConfig;
+
+        return $this;
+    }
+
+    public function setRouteRequest(array $routeRequest):self
+    {
+        $this->routeRequest = $routeRequest;
+
+        return $this;
     }
 
     /**
@@ -245,47 +242,25 @@ class RouteManager
      *<pre>
      *  略
      *</pre>
-     * @param string $route_request_class 路由请求类路径
+     * @param ?string $routeRequestClass 路由请求类路径
      * @return RouteRequest
      */
-    public function createRouteRequest(?string $route_request_class = ''):RouteRequest
+    public function createRouteRequest(?string $routeRequestClass = ''):RouteRequest
     {
-        if (empty($route_request_class)) {
-            $class = $this->getRouteRequestClass();
+        if (!empty($routeRequestClass)) {
+            $class = $routeRequestClass;
         } else {
-            $class = $route_request_class;
+            $class = $this->routeRequest['class'];
+            if (strpos($class,'\\') === false) {// 采用命名空间
+                $class = __NAMESPACE__ . '\\requests\\' . $class;
+            }
         }
 
-        $config = $this->routeRequest;
-        unset($config['class']);
-        $config['router'] = $this->getRouter();
+        $routeRequestConfig = $this->routeRequest;
+        unset($routeRequestConfig['class']);
+        $routeRequestConfig['router'] = $this->getRouter();
 
-        return new $class($config);
-    }
-
-    /**
-     * 获取路由请求类名
-     *<B>说明：</B>
-     *<pre>
-     *  略
-     *</pre>
-     * @return string
-     */
-    protected function getRouteRequestClass():string
-    {
-        if (!empty($this->_routeRequestClass)) {
-            return $this->_routeRequestClass;
-        }
-
-        if (isset($this->routeRequest['class']) && strpos($this->routeRequest['class'],'\\') !== false) {// 采用命名空间
-            $routeRequestClass = $this->routeRequest['class'];
-        } else {
-            $routeRequestClass = __NAMESPACE__ . '\\requests\\' . $this->routeRequest['class'];
-        }
-
-        $this->_routeRequestClass = $routeRequestClass;
-
-        return $this->_routeRequestClass;
+        return new $class($routeRequestConfig);
     }
 
     /**
@@ -295,12 +270,11 @@ class RouteManager
      *  略
      *</pre>
      * @param array $rules 路由规则配置
-     * @param string $method
      * @return void
      */
-    public function addRules(array $rules = [],string $method = ''):void
+    public function addRules(array $rules = []):void
     {
-        $this->getRouter()->addRules($rules,$method);
+        $this->getRouter()->addRules($rules);
     }
 
     /**
@@ -309,13 +283,13 @@ class RouteManager
      *<pre>
      *  略
      *</pre>
-     * @param array $rule 路由规则配置
+     * @param Rule $rule 路由规则配置
      * @param string $method 请求方式
      * @return void
      */
-    public function addRule(Rule $rule,string $method = ''):void
+    public function addRule(Rule $rule):void
     {
-        $this->addRules([$rule],$method);
+        $this->addRules([$rule]);
     }
 
     /**
@@ -340,6 +314,9 @@ class RouteManager
             $ruleConfig = array_merge($ruleConfig,$options);
         } else {
             $ruleConfig = $uri;
+            if (!isset($ruleConfig[Rule::URL_METHOD_NAME])) {
+                $ruleConfig[Rule::URL_METHOD_NAME] = $method;
+            }
         }
 
         return new Rule($ruleConfig);
@@ -391,7 +368,7 @@ class RouteManager
      */
     public function parseRequest($routeRequest = null):RouteRequest
     {
-        $this->initRules();
+        $this->injectRules();
 
         if ($routeRequest instanceof RouteRequest) {
             if (is_null($routeRequest->getRouter())) {
@@ -414,7 +391,7 @@ class RouteManager
      */
     public function buildUrL(string $url = '',array $params = [],array $options = [])
     {
-        $this->initRules();
+        $this->injectRules();
 
         return $this->getRouter()->buildUrL($url,$params,$options);
     }
