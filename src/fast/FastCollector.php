@@ -1,12 +1,12 @@
 <?php
-namespace hehe\core\hrouter\base;
+namespace hehe\core\hrouter\fast;
 
-use hehe\core\hrouter\base\GroupRule;
+use hehe\core\hrouter\base\Collector;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
 use hehe\core\hrouter\Route;
 
-class RuleCollector extends Collector
+class FastCollector extends Collector
 {
 
     /**
@@ -136,7 +136,7 @@ class RuleCollector extends Collector
         }
     }
 
-    public function getConstantActionRules(string $action):array
+    protected function getConstantActionRules(string $action):array
     {
         if (isset($this->constantActionRules[Route::GET_METHOD][$action])) {
             return [$this->constantActionRules[Route::GET_METHOD][$action]];
@@ -156,7 +156,7 @@ class RuleCollector extends Collector
      * @param array $methods 请求类型集合
      * @return Rule[]
      */
-    public function getVarActionRules(...$methods):array
+    protected function getVarActionRules(...$methods):array
     {
         $rules = [];
         foreach ($methods as $method) {
@@ -173,7 +173,7 @@ class RuleCollector extends Collector
         return array_values($rules);
     }
 
-    public function getConstantUriRules(RouteRequest $routeRequest):array
+    protected function getConstantUriRules(RouteRequest $routeRequest):array
     {
 
         $method = $routeRequest->getMethod();
@@ -205,7 +205,7 @@ class RuleCollector extends Collector
      * @param array $methods 请求类型集合
      * @return Rule[]
      */
-    public function getVarUriRules(RouteRequest $routeRequest,...$methods):array
+    protected function getVarUriRules(RouteRequest $routeRequest,...$methods):array
     {
         $rules = [];
         foreach ($methods as $method) {
@@ -220,6 +220,24 @@ class RuleCollector extends Collector
         }
 
         return array_values($rules);
+    }
+
+    public function getUriRules(RouteRequest $routeRequest,string $method,string $type = ''):array
+    {
+        if ($type === 'constant') {
+            return $this->getConstantUriRules($routeRequest,$method,$type);
+        } else {
+            return $this->getVarUriRules($routeRequest,$method);
+        }
+    }
+
+    public function getActionRules(string $method,string $type = ''):array
+    {
+        if ($type === 'constant') {
+            return $this->getConstantActionRules($method);
+        } else {
+            return $this->getVarActionRules($method);
+        }
     }
 
 

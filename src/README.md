@@ -229,8 +229,8 @@ class FastRouter extends Router
     
     }
     
-    // 生成URI地址
-    public function buildUrL(string $uri = '',array $params = [],array $options = [])
+    // 匹配action规则
+    public function matchAction(string $uri = '',array $params = [],array $options = [])
     {
     
     }

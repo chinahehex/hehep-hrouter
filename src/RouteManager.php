@@ -45,7 +45,7 @@ class RouteManager
         // 一次合并的条数
         'mergeLen'=>0,
         // 是否延迟加载规则
-        'lazy'=>true,
+        'lazy'=>false,
     ];
 
     /**

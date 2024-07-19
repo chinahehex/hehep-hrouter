@@ -63,7 +63,7 @@ abstract class Router
      * 路由规则收集器
      * @var Collector
      */
-    public $ruleCollector;
+    public $collector;
 
 
     /**
@@ -82,7 +82,6 @@ abstract class Router
             }
         }
 
-        $this->ruleCollector = new RuleCollector();
     }
 
     public function getCollectorClass():string
@@ -92,12 +91,12 @@ abstract class Router
 
     public function getCollector():Collector
     {
-        if (is_null($this->ruleCollector)) {
+        if (is_null($this->collector)) {
             $class = $this->collectorClass;
-            $this->ruleCollector = new $class();
+            $this->collector = new $class();
         }
 
-        return $this->ruleCollector;
+        return $this->collector;
     }
 
     /**
@@ -289,10 +288,10 @@ abstract class Router
             list($regex,$mergeRegexs) = $uriRegexs;
 
             $pathinfo = $routeRequest->getRoutePathinfo();
-            if (!preg_match($regex,':'.$pathinfo . ':',$matches)) {
+            if (!preg_match($regex,Rule::MERGE_VAR_FLAG.$pathinfo . Rule::MERGE_VAR_FLAG,$matches)) {
                 //continue;
                 $pathinfo = $routeRequest->getFullUrl();
-                if (!preg_match($regex,':'.$pathinfo . ':',$matches)) {
+                if (!preg_match($regex,Rule::MERGE_VAR_FLAG.$pathinfo . Rule::MERGE_VAR_FLAG,$matches)) {
                     continue;
                 }
             }
@@ -303,30 +302,20 @@ abstract class Router
             foreach ($matches as $key=>$value) {
                 if (is_string($key) && $value !== '') {
                     list($name,$rule_index) = explode(self::MERGE_SPLIT_NAME,$key);
-                    $value = trim($value,':');
+                    /** @var Rule $rule */
                     $rule = $mergeRules[$rule_index];
-                    if ($rule->hasVarLeftSplit($name)) {
-                        $value = ltrim($value,'/');
-                    } else if ($rule->hasVarRightSplit($name)) {
-                        $value = rtrim($value,'/');
-                    }
+                    $value = $rule->trimMergeVar($name,$value);
                     $matchParams[$name] = $value;
                 }
             }
 
             if ($rule_index === '') {
-                $rule_index = array_search(':' . $pathinfo . ':', $mergeRegexs);
+                $rule_index = array_search(Rule::MERGE_VAR_FLAG. $pathinfo . Rule::MERGE_VAR_FLAG, $mergeRegexs);
             }
 
             /** @var Rule $rule */
             $rule = $mergeRules[$rule_index];
             return $rule->parseRequest($pathinfo,$routeRequest,$matchParams);
-
-//            if ($rule instanceof GroupRule) {
-//                return $rule->parseRequest($pathinfo,$routeRequest);
-//            } else {
-//                return $rule->parseRequest($pathinfo,$routeRequest,$matchParams);
-//            }
         }
 
         return false;
@@ -370,7 +359,7 @@ abstract class Router
 
             list($regex,$mergeRegexs) = $actionRegexs;
 
-            if (!preg_match($regex,':'.$uri.':',$matches)) {
+            if (!preg_match($regex,Rule::MERGE_VAR_FLAG.$uri.Rule::MERGE_VAR_FLAG,$matches)) {
                 continue;
             }
 
@@ -380,32 +369,20 @@ abstract class Router
             foreach ($matches as $key=>$value) {
                 if (is_string($key) && $value !== '') {
                     list($name,$rule_index) = explode(self::MERGE_SPLIT_NAME,$key);
-                    $value = trim($value,':');
                     /** @var Rule $rule */
                     $rule = $mergeRules[$rule_index];
-                    if ($rule->hasVarLeftSplit($name)) {
-                        $value = ltrim($value,'/');
-                    } else if ($rule->hasVarRightSplit($name)) {
-                        $value = rtrim($value,'/');
-                    }
-
+                    $value = $rule->trimMergeVar($name,$value);
                     $matchParams[$name] = $value;
                 }
             }
 
             if ($rule_index === '') {
-                $rule_index = array_search(':' . $uri . ':', $mergeRegexs);
+                $rule_index = array_search(Rule::MERGE_VAR_FLAG . $uri . Rule::MERGE_VAR_FLAG, $mergeRegexs);
             }
 
             /** @var Rule $rule */
             $rule = $mergeRules[$rule_index];
             return $rule->parseUrL($uri,$params,$matchParams);
-
-//            if ($rule instanceof GroupRule) {
-//                return $rule->parseUrL($uri,$params);
-//            } else {
-//                return $rule->parseUrL($uri,$params,$matchParams);
-//            }
         }
 
         return false;
@@ -472,6 +449,91 @@ abstract class Router
         return $matchResult;
     }
 
+
+
+    /**
+     * 生成URL 地址
+     *<B>说明：</B>
+     *<pre>
+     * 示例1：创建url地址
+     * $url = $this->buildUrL('user/login',['id'=>'ok']);
+     * $url:user/login?id=ok
+     *
+     * 示例2：添加后缀
+     * $url = $this->buildUrL('user/login',['id'=>'ok'],['suffix'=>true]);
+     * or
+     * $url = $this->buildUrL('user/login',['id'=>'ok'],['suffix'=>'.html']);
+     *
+     * $url:user/login.html?id=ok
+     *
+     * 示例3：添加域名,如果路由规则中已经存在域名，也会显示
+     * $url = $this->buildUrL('user/login',['id'=>'ok'],['domain'=>true]);
+     * or
+     * $url = $this->buildUrL('user/login',['id'=>'ok'],['domain'=>'http://www.baidu.com']);
+     *
+     * $url:http://www.baidu.com/user/login?id=ok
+     *
+     * 示例4：添加锚点
+     * $url = $this->buildUrL('user/login',['id'=>'ok','#'=>'add']);
+     *
+     * 示例5：当前页面url
+     * $url = $this->buildUrL('',['id'=>'ok','#'=>'add']);
+     *
+     *</pre>
+     * @param string $uri url 地址
+     * @param array $params url 参数
+     * @param array $options url 配置
+     * @return string
+     */
+    public function buildUrL(string $uri = '',array $params = [],array $options = [])
+    {
+        $anchor = isset($params['#']) ? '#' . $params['#'] : '';
+        unset($params['#']);
+
+        // 查找后缀
+        $suffix = "";
+        if (strpos($uri,'.') !== false) {
+            list($uri,$suffix) = explode('.',$uri);
+        }
+
+        // 查找域名
+        $matchResult = $this->matchAction($uri,$params,$options);
+
+        $url = "";
+        $matchRule = null;
+
+        if ($matchResult !== false) {
+            list($url,$params,$matchRule) = $matchResult;
+        } else {
+            $url = $uri;
+        }
+
+        // 解析url域名
+        if (preg_match('/^http(s?):\/\//i',$url) === 0) {
+            $domain = $this->getDomain($options,$matchRule);
+            $url = $domain != '' ? $domain  . $url : $url;
+        }
+
+        // 解析url 文件名后缀
+        if ($url !== '') {
+            if ($suffix === '') {
+                $suffix = $this->getSuffix($url,$options,$matchRule);
+            }
+
+            $url = $suffix != '' ? $url  . "." . $suffix : $url;
+        }
+
+        // url 参数
+        if (!empty($params) && ($query = http_build_query($params)) !== '') {
+            $url .= '?' . $query;
+        }
+
+        // 解析锚点
+        $url .= $anchor;
+
+        return $url;
+    }
+
     /**
      * 添加路由规则
      *<B>说明：</B>
@@ -492,19 +554,21 @@ abstract class Router
      * @param RouteRequest $routeRequest 路由请求对象
      * @return void
      */
-    abstract public function parseRequest(RouteRequest $routeRequest);
+    abstract public function parseRequest(RouteRequest $routeRequest):RouteRequest;
 
     /**
-     * 生成url地址
+     * 匹配action路由
      *<B>说明：</B>
      *<pre>
      *  略
      *</pre>
-     * @param string $url url地址
+     * @param string $uri url地址
      * @param array $params url参数
      * @param array $options url配置
-     * @return string
+     * @return array|bool
      */
-    abstract public function buildUrL(string $url = '',array $params = [],array $options = []);
+    abstract public function matchAction(string $uri = '',array $params = [],array $options = []);
+
+
 
 }

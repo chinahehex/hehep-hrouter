@@ -80,7 +80,7 @@ class RoutineRouter extends Router
      * @param RouteRequest $routeRequest 路由请求对象
      * @return RouteRequest
      */
-    public function parseRequest(RouteRequest $routeRequest)
+    public function parseRequest(RouteRequest $routeRequest):RouteRequest
     {
         $matchResult = false;
 
@@ -110,50 +110,8 @@ class RoutineRouter extends Router
         return $routeRequest;
     }
 
-    /**
-     * 生成URL 地址
-     *<B>说明：</B>
-     *<pre>
-     * 示例1：创建url地址
-     * $url = $this->buildUrL('user/login',['id'=>'ok']);
-     * $url:user/login?id=ok
-     *
-     * 示例2：添加后缀
-     * $url = $this->buildUrL('user/login',['id'=>'ok'],['suffix'=>true]);
-     * or
-     * $url = $this->buildUrL('user/login',['id'=>'ok'],['suffix'=>'.html']);
-     *
-     * $url:user/login.html?id=ok
-     *
-     * 示例3：添加域名,如果路由规则中已经存在域名，也会显示
-     * $url = $this->buildUrL('user/login',['id'=>'ok'],['domain'=>true]);
-     * or
-     * $url = $this->buildUrL('user/login',['id'=>'ok'],['domain'=>'http://www.baidu.com']);
-     *
-     * $url:http://www.baidu.com/user/login?id=ok
-     *
-     * 示例4：添加锚点
-     * $url = $this->buildUrL('user/login',['id'=>'ok','#'=>'add']);
-     *
-     * 示例5：当前页面url
-     * $url = $this->buildUrL('',['id'=>'ok','#'=>'add']);
-     *
-     *</pre>
-     * @param string $uri url 地址
-     * @param array $params url 参数
-     * @param array $options url 配置
-     * @return string
-     */
-	public function buildUrL(string $uri = '',array $params = [],array $options = [])
+	public function matchAction(string $uri = '',array $params = [],array $options = [])
 	{
-        $anchor = isset($params['#']) ? '#' . $params['#'] : '';
-        unset($params['#']);
-
-        // 查找后缀
-        $suffix = "";
-        if (strpos($uri,'.') !== false) {
-            list($uri,$suffix) = explode('.',$uri);
-        }
 
         // 查找域名
         $matchResult = false;
@@ -177,39 +135,8 @@ class RoutineRouter extends Router
             }
         }
 
-        $url = "";
-        $matchRule = null;
 
-        if ($matchResult !== false) {
-            list($url,$params,$matchRule) = $matchResult;
-        } else {
-            $url = $uri;
-        }
-
-        // 解析url域名
-        if (preg_match('/^http(s?):\/\//i',$url) === 0) {
-            $domain = $this->getDomain($options,$matchRule);
-            $url = $domain != '' ? $domain  . $url : $url;
-        }
-
-        // 解析url 文件名后缀
-        if ($url !== '') {
-            if ($suffix === '') {
-                $suffix = $this->getSuffix($url,$options,$matchRule);
-            }
-
-            $url = $suffix != '' ? $url  . "." . $suffix : $url;
-        }
-
-        // url 参数
-        if (!empty($params) && ($query = http_build_query($params)) !== '') {
-            $url .= '?' . $query;
-        }
-
-        // 解析锚点
-        $url .= $anchor;
-
-        return $url;
+        return $matchResult;
 	}
 
 

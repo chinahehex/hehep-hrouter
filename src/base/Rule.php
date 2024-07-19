@@ -12,6 +12,9 @@ class Rule
     const RULE_URI_NAME = 'uri';
     const URL_METHOD_NAME = 'method';
 
+    // 合并规则变量标志
+    const MERGE_VAR_FLAG = ':';
+
     const URI_FLAG_REGEX = '/<(\w+):?([^>]+)?>|\\{(\w+):?([^\\}]+)?\\}/';
     const URI_FLAG_REGEX1 = '/<_?(\w+):?([^>]+)?>/';
     const URI_FLAG_REGEX2 = '/\\{_?(\w+):?([^\\}]+)?\\}/';
@@ -250,6 +253,12 @@ class Rule
     protected $_initStatus = false;
 
     /**
+     *  请求类型缓存
+     * @var array
+     */
+    protected $_methods = [];
+
+    /**
      * 分组id
      * @var string
      */
@@ -298,7 +307,7 @@ class Rule
         $this->buildUri();
         $this->buildAction();
 
-        $this->router->ruleCollector->initRule($this);
+        $this->router->getCollector()->initRule($this);
 
         return $this;
     }
@@ -382,6 +391,11 @@ class Rule
 
     public function getMethods():array
     {
+
+        if ($this->_initStatus && !empty($this->_methods)) {
+            return $this->_methods;
+        }
+
         $methods = [];
         if (!empty($this->method) ) {
             if (is_string($this->method)) {
@@ -397,6 +411,8 @@ class Rule
             } else if (is_array($this->method)) {
                 $methods = $this->method;
             }
+
+            $this->_methods = $methods;
         }
 
         return $methods;
@@ -513,24 +529,23 @@ class Rule
         return $this->uriMergeRegex;
     }
 
-    public function hasVarLeftSplit(string $name):bool
+    /**
+     * 去除合并参数两边的关键词
+     * @param string $name
+     * @param string $value
+     * @return string
+     */
+    public function trimMergeVar(string $name,string $value):string
     {
-        if ($this->uriParams[$name]['split'] === 'left' ) {
-            return true;
-        } else {
-            return false;
+        $value = trim($value,self::MERGE_VAR_FLAG);
+        if ($this->uriParams[$name]['split'] === 'right' ){
+            $value = rtrim($value,'/');
+        } else if ($this->uriParams[$name]['split'] === 'left' ) {
+            $value = ltrim($value,'/');
         }
-    }
 
-    public function hasVarRightSplit(string $name):bool
-    {
-        if ($this->uriParams[$name]['split'] === 'right' ) {
-            return true;
-        } else {
-            return false;
-        }
+        return $value;
     }
-
 
     public function getMergeActionRegex():string
     {
@@ -627,18 +642,20 @@ class Rule
                 }
             }
 
+            $merge_flag = self::MERGE_VAR_FLAG;
+
             if ($optional_status === true) {
                 if (substr($pattern,-1) === '/') {
                     $regex = substr($pattern,0,strlen($pattern) - 1);
-                    $this->uriParams[$name] = ['pattern'=>"((?P<$name>$regex)/)?",'split'=>'right','fist_regex'=>"(?P<$name>:($pattern)?)",'last_regex'=>"(?P<$name>($pattern)?:)",'regex'=>$regex,'optional'=>true,'name'=>"<$name>/"];
+                    $this->uriParams[$name] = ['pattern'=>"((?P<$name>$regex)/)?",'split'=>'right','fist_regex'=>"(?P<$name>{$merge_flag}($pattern)?)",'last_regex'=>"(?P<$name>($pattern)?{$merge_flag})",'regex'=>$regex,'optional'=>true,'name'=>"<$name>/"];
                 } else if (substr($pattern,0,1) === '/') {
                     $regex = substr($pattern,1);
-                    $this->uriParams[$name] = ['pattern'=>"(/(?P<$name>$regex))?",'split'=>'left','fist_regex'=>"(?P<$name>:($pattern)?)",'last_regex'=>"(?P<$name>($pattern)?:)",'regex'=>$regex,'optional'=>true,'name'=>"/<$name>"];
+                    $this->uriParams[$name] = ['pattern'=>"(/(?P<$name>$regex))?",'split'=>'left','fist_regex'=>"(?P<$name>{$merge_flag}($pattern)?)",'last_regex'=>"(?P<$name>($pattern)?{$merge_flag})",'regex'=>$regex,'optional'=>true,'name'=>"/<$name>"];
                 } else {
-                    $this->uriParams[$name] = ['pattern'=>"(?P<$name>$pattern)?",'split'=>'','fist_regex'=>"(?P<$name>:($pattern)?)",'last_regex'=>"(?P<$name>($pattern)?:)",'regex'=>$pattern,'optional'=>true,'name'=>"<$name>"];
+                    $this->uriParams[$name] = ['pattern'=>"(?P<$name>$pattern)?",'split'=>'','fist_regex'=>"(?P<$name>{$merge_flag}($pattern)?)",'last_regex'=>"(?P<$name>($pattern)?{$merge_flag})",'regex'=>$pattern,'optional'=>true,'name'=>"<$name>"];
                 }
             }  else {
-                $this->uriParams[$name] = ['pattern'=>"(?P<$name>$pattern)",'split'=>'','fist_regex'=>"(?P<$name>:($pattern))",'last_regex'=>"(?P<$name>($pattern):)",'regex'=>$pattern,'optional'=>false,'name'=>"<$name>"];
+                $this->uriParams[$name] = ['pattern'=>"(?P<$name>$pattern)",'split'=>'','fist_regex'=>"(?P<$name>{$merge_flag}($pattern))",'last_regex'=>"(?P<$name>($pattern){$merge_flag})",'regex'=>$pattern,'optional'=>false,'name'=>"<$name>"];
             }
 
             $var_names[] = $name;
@@ -738,13 +755,13 @@ class Rule
         if (!empty($fist_rule) && substr($this->uriRegex,0,strlen($fist_rule['pattern'])) == $fist_rule['pattern']) {
             $this->uriMergeRegex = str_replace($fist_rule['pattern'],$fist_rule['fist_regex'],$this->uriRegex);
         } else {
-            $this->uriMergeRegex = ':' . $this->uriRegex;
+            $this->uriMergeRegex = self::MERGE_VAR_FLAG . $this->uriRegex;
         }
 
         if (!empty($last_rule) && substr($this->uriMergeRegex,-(strlen($last_rule['pattern']))) == $last_rule['pattern']) {
             $this->uriMergeRegex = str_replace($last_rule['pattern'],$last_rule['last_regex'],$this->uriMergeRegex);
         } else {
-            $this->uriMergeRegex = $this->uriMergeRegex . ':';
+            $this->uriMergeRegex = $this->uriMergeRegex . self::MERGE_VAR_FLAG;
         }
 
     }
@@ -796,13 +813,13 @@ class Rule
         if (!empty($fist_rule) && substr($this->actionRegex,0,strlen($fist_rule['pattern'])) == $fist_rule['pattern']) {
             $this->actionMergeRegex = str_replace($fist_rule['pattern'],$fist_rule['fist_regex'],$this->actionRegex);
         } else {
-            $this->actionMergeRegex = ':' . $this->actionRegex;
+            $this->actionMergeRegex = self::MERGE_VAR_FLAG . $this->actionRegex;
         }
 
         if (!empty($last_rule) && substr($this->actionMergeRegex,-(strlen($last_rule['pattern']))) == $last_rule['pattern']) {
             $this->actionMergeRegex = str_replace($last_rule['pattern'],$last_rule['last_regex'],$this->actionMergeRegex);
         } else {
-            $this->actionMergeRegex = $this->actionMergeRegex . ':';
+            $this->actionMergeRegex = $this->actionMergeRegex . self::MERGE_VAR_FLAG;
         }
     }
 

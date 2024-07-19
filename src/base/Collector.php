@@ -92,33 +92,22 @@ abstract class Collector
      */
     abstract public function initRule(Rule $rule):void;
 
-    /**
-     * 指定路由地址返回对应的常量路由
-     * @param string $action
-     * @return Rule[]|array
-     */
-    abstract public function getConstantActionRules(string $action):array;
 
     /**
      * 指定路由地址返回对应的变量路由
-     * @param mixed ...$methods
-     * @return Rule[]
-     */
-    abstract public function getVarActionRules(...$methods):array;
-
-    /**
-     * 指定路由规则返回对应的常量路由
-     * @param RouteRequest $routeRequest
+     * @param string $method
+     * @param string $type
      * @return Rule[]|array
      */
-    abstract public function getConstantUriRules(RouteRequest $routeRequest):array;
+    abstract public function getActionRules(string $method,string $type = ''):array;
 
     /**
      * 指定路由规则返回对应的变量路由
      * @param RouteRequest $routeRequest
-     * @param mixed ...$methods
-     * @return array
+     * @param string $method
+     * @param string $type
+     * @return array|Rule[]
      */
-    abstract public function getVarUriRules(RouteRequest $routeRequest,...$methods):array;
+    abstract public function getUriRules(RouteRequest $routeRequest,string $method,string $type = ''):array;
 
 }
