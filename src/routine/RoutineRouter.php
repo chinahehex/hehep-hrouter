@@ -22,42 +22,47 @@ use hehe\core\hrouter\Route;
 class RoutineRouter extends Router
 {
 
+    
     /**
-     * 构造方法
-     *<B>说明：</B>
-     *<pre>
-     *  略
-     *</pre>
-     * @param array $attrs 配置参数
+     * 构造函数
+     * 用于初始化对象。这个构造函数继承自父类，并接受一个数组参数来传递属性。
+     * 
+     * @param array $attrs 初始化对象时的属性数组，可以为空。
      */
     public function __construct(array $attrs = [])
     {
         parent::__construct($attrs);
     }
 
+
     public function runCallable(GroupRule $rule)
     {
         $rule->asFalseGroup(true);
         $rule->runCallable();
     }
-
-
+    
+    
     /**
-     * 添加路由规则
-     *<B>说明：</B>
-     *<pre>
-     *  略
-     *</pre>
-     * @param Rule $rule 路由规则
+     * 添加路由规则。
+     * 
+     * 本方法用于向规则收集器添加新的路由规则。它接受一个Rule对象作为参数，
+     * 并通过该对象获取定义的处理方法。如果规则没有明确指定任何方法，
+     * 则默认添加GET方法。
+     * 
+     * @param Rule $rule 要添加的路由规则对象。
      * @return void
      */
     public function addRule(Rule $rule):void
     {
+        // 从规则对象中获取定义的方法列表
         $rule_methods = $rule->getMethods();
+        
+        // 如果方法列表为空，则默认添加GET方法
         if (empty($rule_methods)) {
             $rule_methods[] = Route::DEFAULT_METHOD;
         }
-
+        
+        // 将规则及其方法添加到规则收集器中
         $this->ruleCollector->addRule($rule,$rule_methods);
     }
 
