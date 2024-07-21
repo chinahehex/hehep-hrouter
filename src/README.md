@@ -4,7 +4,7 @@
 - hehep-hrouter 是一个PHP 路由工具组件
 - 支持注释注解,PHP8原生注解
 - 支持分组路由
-- 支持key/value结构存储路由,,快速定位路由，提高匹配效率
+- 支持key/value结构存储路由,快速定位路由，提高匹配效率
 - 支持合并路由解析,提高匹配效率
 - 支持路由缓存
 ## 安装
@@ -26,20 +26,27 @@ composer require hehex/hehep-hrouter
 ```php
 $route_conf = [
     // 路由请求定义
-    'routerRequest'=>[
+    'routeRequest'=>[
         'class'=>'WebRouterRequest',
         'attr1'=>'参数1',
         'attr2'=>'参数2'
     ],
     
     // 路由解析器定义
-    'customRouter'=>[
-        'class'=>'hehe\core\hrouter\fast\FastRouter',
+    'routeMatcher'=>[
+        'class'=>'hehe\core\hrouter\fast\FastRouteMatcher',
         'suffix'=>true,// 全局前缀
         'domain'=>false,// 生产url 地址时是否显示域名
         'mergeRule'=>false, // 是否合并路由解析
         'mergeLen'=>0,// 一次合并的条数
         'lazy'=>true,// 是否延迟加载规则
+    ],
+    
+    // 路由缓存配置
+    'routeCache' => [
+        'routeFile'=>[],// 路由文件
+        'cacheDir'=>'',// 缓存目录
+        'timeout'=>0,// 缓存过期时间,0表示一直有效
     ],
     
     // 路由规则列表
@@ -66,10 +73,12 @@ $route_conf = [
 
 ```
 
-## 路由管理器
+## 路由配置
+
+### 路由管理器
 - 说明
 ```
-路由管理器:收集路由信息,配置路由请求,管理路由解析器,解析url地址,生成url 地址
+路由管理器:收集路由信息,配置路由请求,管理路由解析器,管理路由缓存,解析url地址,生成url 地址
 ```
 - 路由管理器操作方式
 ```php
@@ -80,7 +89,7 @@ use hehe\core\hrouter\Route;
 $hrouter = new RouteManager([]);
 
 // 设置路由请求,路由解析器
-$hrouter->setRouterConfig([])->setRouteRequest([]);
+$hrouter->setRouteMatcher([])->setRouteRequest([]);
 
 // 收集路由
 Route::get("user/get","user/get");
@@ -108,7 +117,7 @@ use hehe\core\hrouter\Route;
 $hrouter = Route::intiRoute();
 
 // 设置路由请求,路由解析器
-$hrouter->setRouterConfig([])->setRouteRequest([]);
+$hrouter->setRouteMatcher([])->setRouteRequest([]);
 // Route::intiRoute(AppRouteRequest:class)
 // Route::intiRoute('WebRouteRequest')
 
@@ -130,7 +139,7 @@ $url = Route::buildUrL("user/get",["id"=>122]);
 ```
 
 
-## 路由请求
+### 路由请求
 - 说明
 ```
 路由请求类:存储路由解析器需要的数据,比如路由请求对象可以提供pathinfo地址,host,method 等数据
@@ -195,7 +204,7 @@ $rule = $routeRequest->getRouteRule();// 获取匹配到的路由规则对象
 
 ```
 
-## 路由解释器
+### 路由解释器
 - 说明
 ```
 路由解释器类:负责调度规则,解析路由规则,生成后缀,域名等等
@@ -211,15 +220,16 @@ lazy:是否延迟加载规则,默认值:false
 ```
 
 - 定义路由解释器类
+
 ```php
 namespace hehe\core\hrouter\fast;
 
-use hehe\core\hrouter\base\Router;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
 use hehe\core\hrouter\Route;
+use hehe\core\hrouter\RouteManager;
 
-class FastRouter extends Router
+class FastRouteManager extends RouteManager
 {
     // 收集路由规则
     public function addRule(Rule $rule):void
@@ -228,7 +238,7 @@ class FastRouter extends Router
     }
     
     // 解析路由请求,调用路由规则
-    public function parseRequest(RouteRequest $routeRequest)
+    public function matchRequest(RouteRequest $routeRequest)
     {
     
     }
@@ -248,8 +258,8 @@ use hehe\core\hrouter\RouteManager;
 // 创建路由管理器对象
 $hrouter = new RouteManager([]);
 
-$hrouter->setRouterConfig([
-    'class'=>'hehe\core\hrouter\fast\FastRouter',
+$hrouter->setRouteMatcher([
+    'class'=>'hehe\core\hrouter\fast\FastRouteMatcher',
     'suffix'=>false,// url 地址后缀
     // url 是否加入域名
     'domain'=>false,// 生产url 地址时是否显示域名,
@@ -262,7 +272,7 @@ $hrouter->setRouterConfig([
 ]);
 
 // 获取路由解释器对象
-$router = $hrouter->getRouter();
+$routeMatcher = $hrouter->getRouteMatcher();
 
 // 解析URL地址
 $routeRequest = $hrouter->parseRequest();
@@ -274,7 +284,7 @@ $rule = $routeRequest->getRouteRule();// 获取匹配到的路由规则对象
 
 ```
 
-## 路由缓存
+### 路由缓存
 - 说明
 ```
 路由缓存类:由于路由规则是动态生成的,所以需要缓存路由规则,以便下次使用

@@ -24,9 +24,9 @@ class RouteRequest
 
     /**
      * 路由解析器对象
-     * @var Router
+     * @var RouteMatcher
      */
-    protected $router;
+    protected $routeMatcher;
 
     /**
      * 匹配到的路由对象
@@ -131,14 +131,14 @@ class RouteRequest
         }
     }
 
-    public function setRouter(Router $router):void
+    public function setRouteMatcher(RouteMatcher $routeMatcher):void
     {
-        $this->router = $router;
+        $this->routeMatcher = $routeMatcher;
     }
 
-    public function getRouter():?Router
+    public function getRouteMatcher():?RouteMatcher
     {
-        return $this->router;
+        return $this->routeMatcher;
     }
 
     public function getRouteUrl():string
@@ -165,7 +165,7 @@ class RouteRequest
      */
     public function parseRequest():void
     {
-        $this->router->parseRequest($this);
+        $this->routeMatcher->matchRequest($this);
     }
 
     /**
@@ -181,7 +181,7 @@ class RouteRequest
      */
     public function buildUrl(string $url = '',array $params = [],array $options = []):string
     {
-        return $this->router->buildUrL($url,$params,$options);
+        return $this->routeMatcher->buildUrL($url,$params,$options);
     }
 
     /***** 继承此类以下方法即可 ******/

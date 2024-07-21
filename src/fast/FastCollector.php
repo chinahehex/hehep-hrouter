@@ -2,7 +2,7 @@
 namespace hehe\core\hrouter\fast;
 
 use hehe\core\hrouter\base\Collector;
-use hehe\core\hrouter\base\Router;
+use hehe\core\hrouter\base\RouteMatcher;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
 use hehe\core\hrouter\Route;
@@ -244,28 +244,28 @@ class FastCollector extends Collector
         }
     }
 
-    public function buildRouteCache(Router $router,$caches):array
+    public function buildRouteCache(RouteMatcher $routeMatcher,$caches):array
     {
 
-        $caches = $this->buildVarRouteCache($router,$caches);
-        if ($router->getMergeRule()) {
-            $caches['mergeCaches'] = $this->buildMergeCache($router);
+        $caches = $this->buildVarRouteCache($routeMatcher,$caches);
+        if ($routeMatcher->getMergeRule()) {
+            $caches['mergeCaches'] = $this->buildMergeCache($routeMatcher);
         }
 
         return $caches;
     }
 
-    public function restoreRouteCache(Router $router,array $caches):void
+    public function restoreRouteCache(RouteMatcher $routeMatcher,array $caches):void
     {
 
-        $this->restoreVarRouteCache($router,$caches);
-        if ($router->getMergeRule()) {
-            $this->restoreMergeCache($router,$caches);
+        $this->restoreVarRouteCache($routeMatcher,$caches);
+        if ($routeMatcher->getMergeRule()) {
+            $this->restoreMergeCache($routeMatcher,$caches);
         }
 
     }
 
-    protected function buildVarRouteCache(Router $router,array $caches):array
+    protected function buildVarRouteCache(RouteMatcher $routeMatcher,array $caches):array
     {
         foreach (['constantActionRules','variableActionRules','constantUriRules','variableUriRules'] as $name) {
             $cacheItems = [];
@@ -282,7 +282,7 @@ class FastCollector extends Collector
         return $caches;
     }
 
-    protected function restoreVarRouteCache(Router $router,array $caches):void
+    protected function restoreVarRouteCache(RouteMatcher $routeMatcher,array $caches):void
     {
         foreach (['constantActionRules','variableActionRules','constantUriRules','variableUriRules'] as $name) {
             $cacheItems = [];
@@ -298,13 +298,13 @@ class FastCollector extends Collector
         }
     }
 
-    public function buildMergeCache(Router $router,string $prefix = ''):array
+    public function buildMergeCache(RouteMatcher $routeMatcher,string $prefix = ''):array
     {
         $cacheItems = [];
         foreach (['variableActionRules','variableUriRules'] as $name) {
             foreach ($this->{$name} as $method => $rules) {
                 $rules = array_values($rules);
-                $mergeLen = $router->getMergeLen();
+                $mergeLen = $routeMatcher->getMergeLen();
                 $ruleList = ($mergeLen === 0) ? [$rules] : array_chunk($rules,$mergeLen);
                 if ($name == 'variableActionRules') {
                     $key = 'act.' . $method;
@@ -319,9 +319,9 @@ class FastCollector extends Collector
                 $cacheItems[$key]['-'] = count($rules);
                 foreach ($ruleList as $index=>$mergeRules) {
                     if ($name == 'variableActionRules') {
-                        $uriRegexs = $router->mergeActionRulesRegex($mergeRules);
+                        $uriRegexs = $routeMatcher->mergeActionRulesRegex($mergeRules);
                     } else if ($name == 'variableUriRules') {
-                        $uriRegexs =$router->mergeUriRulesRegex($mergeRules);
+                        $uriRegexs = $routeMatcher->mergeUriRulesRegex($mergeRules);
                     }
 
                     $cacheItems[$key][$index] = $uriRegexs;
@@ -332,7 +332,7 @@ class FastCollector extends Collector
         // 分组缓存
         if (!empty($this->groups)) {
             foreach ($this->groups as $group) {
-                $groupCaches = $group->getCollector()->buildMergeCache($router,$group->gid);
+                $groupCaches = $group->getCollector()->buildMergeCache($routeMatcher,$group->gid);
                 $cacheItems = array_merge($cacheItems,$groupCaches);
             }
         }
@@ -340,7 +340,7 @@ class FastCollector extends Collector
         return $cacheItems;
     }
 
-    public function restoreMergeCache(Router $router,array $caches = []):void
+    public function restoreMergeCache(RouteMatcher $routeMatcher,array $caches = []):void
     {
 
         // 合并缓存分组id转换

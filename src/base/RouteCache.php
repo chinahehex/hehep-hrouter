@@ -32,9 +32,9 @@ class RouteCache
     protected $timeout = 0;
 
     /**
-     * @var Router
+     * @var RouteMatcher
      */
-    protected $router;
+    protected $routeMatcher;
 
     /**
      * 缓存有效验证结果
@@ -72,7 +72,7 @@ class RouteCache
     public function requireRouteFile():void
     {
         foreach ($this->routeFile as $file) {
-            require_once $file;
+            require $file;
         }
     }
 
@@ -134,7 +134,7 @@ class RouteCache
      */
     public function writeRules()
     {
-        $routesCache = $this->router->getCollector()->buildCache($this->router);
+        $routesCache = $this->routeMatcher->getCollector()->buildCache($this->routeMatcher);
         file_put_contents($this->cacheFile, "<?php\n\nreturn " . var_export($routesCache, true) . ";\n");
     }
 
@@ -144,7 +144,7 @@ class RouteCache
     public function injectRules()
     {
         $caches = require($this->cacheFile);
-        $this->router->getCollector()->restoreCache($this->router,$caches);
+        $this->routeMatcher->getCollector()->restoreCache($this->routeMatcher,$caches);
     }
 
 

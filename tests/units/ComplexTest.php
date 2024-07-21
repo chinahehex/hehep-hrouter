@@ -33,9 +33,9 @@ class ComplexTest extends TestCase
         Route::get("role/get/<id:\d+>","role/get");
         Route::get("role/add","role/doadd");
 
-        Route::get("admin/list","admin/list");
-        Route::get("admin/get/<id:\d+>","admin/get");
-        Route::get("admin/add","admin/doadd");
+        Route::get("adminb/list","adminb/list");
+        Route::get("adminb/get/<id:\d+>","adminb/get");
+        Route::get("adminb/add","adminb/doadd");
 
         Route::addGroup('blog',function (){
             Route::get("list","blog/list");

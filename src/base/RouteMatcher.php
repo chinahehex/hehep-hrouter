@@ -1,6 +1,8 @@
 <?php
 namespace hehe\core\hrouter\base;
 
+use hehe\core\hrouter\Route;
+
 /**
  * 路由基类
  *<B>说明：</B>
@@ -8,7 +10,7 @@ namespace hehe\core\hrouter\base;
  * 略
  *</pre>
  */
-abstract class Router
+abstract class RouteMatcher
 {
     const MERGE_SPLIT_NAME = '_hehe_';
 
@@ -548,7 +550,24 @@ abstract class Router
      * @param Rule $rule 路由规则
      * @return void
      */
-    abstract public function addRule(Rule $rule):void;
+    public function addRule(Rule $rule):void
+    {
+
+        $rule_methods = $rule->getMethods();
+        if (empty($rule_methods)) {
+            $rule_methods[] = Route::DEFAULT_METHOD;
+        }
+
+        if (!$rule->hasInitStatus()) {
+            // 路由规则未初始化
+            if ($this->lazy) {
+                $this->getCollector()->addRule($rule,$rule_methods);
+            } else {
+                $rule->init();
+            }
+        }
+
+    }
 
     /**
      * 解析路由地址
@@ -559,7 +578,7 @@ abstract class Router
      * @param RouteRequest $routeRequest 路由请求对象
      * @return void
      */
-    abstract public function parseRequest(RouteRequest $routeRequest):RouteRequest;
+    abstract public function matchRequest(RouteRequest $routeRequest):RouteRequest;
 
     /**
      * 匹配action路由

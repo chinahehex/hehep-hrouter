@@ -236,9 +236,9 @@ class Rule
     protected $privateVars = [];
 
     /**
-     * @var Router
+     * @var RouteMatcher
      */
-    protected $router;
+    protected $routeMatcher;
 
     /**
      * 参数解析规则对象
@@ -320,7 +320,7 @@ class Rule
         $this->buildUri();
         $this->buildAction();
 
-        $this->router->getCollector()->initRule($this);
+        $this->routeMatcher->getCollector()->initRule($this);
 
         return $this;
     }
@@ -344,9 +344,9 @@ class Rule
         }
     }
 
-    public function setRouter(Router $router):void
+    public function setRouteMatcher(RouteMatcher $routeMatcher):void
     {
-        $this->router = $router;
+        $this->routeMatcher = $routeMatcher;
     }
 
     public function asDomain(string $host = '',bool $domain = true):self

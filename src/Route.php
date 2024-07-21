@@ -3,19 +3,19 @@ namespace hehe\core\hrouter;
 
 use hehe\core\hrouter\base\GroupRule;
 use hehe\core\hrouter\base\RouteCache;
-use hehe\core\hrouter\base\Router;
+use hehe\core\hrouter\base\RouteMatcher;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
 
 
 /**
- * @method static void setRouterConfig(array $routerConfig = [])
+ * @method static void setRouteMatcher(array $routerConfig = [])
  * @method static void setRouteRequest(array $routeRequest)
  * @method static void setRouteCache(array $routeCache)
  * @method static RouteRequest parseRequest($routeRequest = null)
  * @method static string buildUrL(string $url = '',array $params = [],array $options = [])
  * @method static RouteCache getRouteCache()
- * @method static Router getRouter()
+ * @method static RouteMatcher getRouteMatcher()
  * @method static RouteRequest createRouteRequest()
  */
 class Route
@@ -207,6 +207,10 @@ class Route
 
     public static function __callStatic($method, $params)
     {
+        if (is_null(static::$routeManager)) {
+            static::intiRoute();
+        }
+
         return call_user_func_array([static::$routeManager,$method],$params);
     }
 

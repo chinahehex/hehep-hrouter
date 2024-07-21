@@ -3,10 +3,10 @@ namespace hehe\core\hrouter;
 
 use hehe\core\hrouter\base\GroupRule;
 use hehe\core\hrouter\base\RouteCache;
-use hehe\core\hrouter\base\Router;
+use hehe\core\hrouter\base\RouteMatcher;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
-use hehe\core\hrouter\fast\FastRouter;
+use hehe\core\hrouter\fast\FastRouteMatcher;
 
 /**
  * 路由管理类
@@ -33,18 +33,17 @@ class RouteManager
      *</pre>
      * @var array
      */
-    protected $customRouter = [
+    protected $routeMatcher = [
         // 路由类
-        'class'=>FastRouter::class,
-        //'class'=>RoutineRouter::class,
+        'class'=>FastRouteMatcher::class,
         // url 是否加入上后缀
         'suffix'=>false,// url 地址后缀
         // url 是否加入域名
         'domain'=>false,// 生产url 地址时是否显示域名,
         // 是否合并路由解析
-        'mergeRule'=>true,
+        'mergeRule'=>false,
         // 一次合并的条数
-        'mergeLen'=>4,
+        'mergeLen'=>0,
         // 是否延迟加载规则
         'lazy'=>false,
     ];
@@ -83,9 +82,9 @@ class RouteManager
      *<pre>
      *  略
      *</pre>
-     * @var Router
+     * @var RouteMatcher
      */
-    protected $_router;
+    protected $_routeMatcher;
 
     protected $_routeCache;
 
@@ -142,12 +141,12 @@ class RouteManager
         }
 
         foreach ($rules as $rule) {
-            $router = $this->getRouter();
-            $rule->setRouter($router);
+            $routeMatcher = $this->getRouteMatcher();
+            $rule->setRouteMatcher($routeMatcher);
             if ($rule instanceof GroupRule) {
-                $router->runCallable($rule);
+                $routeMatcher->runCallable($rule);
             } else {
-                $router->addRule($rule);
+                $routeMatcher->addRule($rule);
             }
         }
     }
@@ -230,16 +229,16 @@ class RouteManager
      *<pre>
      *  略
      *</pre>
-     * @return Router
+     * @return RouteMatcher
      */
-    public function getRouter():Router
+    public function getRouteMatcher():RouteMatcher
     {
 
-        if (!is_null($this->_router)) {
-            return $this->_router;
+        if (!is_null($this->_routeMatcher)) {
+            return $this->_routeMatcher;
         }
 
-        $router_config = $this->customRouter;
+        $router_config = $this->routeMatcher;
 
         // 路由检查
         if (isset($router_config['class']) && strpos($router_config['class'],'\\') !== false) {// 采用命名空间
@@ -248,20 +247,20 @@ class RouteManager
             $routerClass = __NAMESPACE__ . '\\' . $router_config['class'];
         }
 
-        /** @var Router $router */
-        $router = new $routerClass($router_config);
-        $this->_router = $router;
+        /** @var RouteMatcher $routeMatcher */
+        $routeMatcher = new $routerClass($router_config);
+        $this->_routeMatcher = $routeMatcher;
 
-        return $this->_router;
+        return $this->_routeMatcher;
     }
 
     /**
      * 设置路由解析器配置
      * @param array $routerConfig 路由解析器配置
      */
-    public function setRouterConfig(array $routerConfig = []):self
+    public function setRouteMatcher(array $routerConfig = []):self
     {
-        $this->customRouter = array_merge($this->customRouter,$routerConfig);
+        $this->routeMatcher = array_merge($this->routeMatcher,$routerConfig);
 
         return $this;
     }
@@ -297,7 +296,7 @@ class RouteManager
         }
 
         $config = $this->routeCache;
-        $config['router'] = $this->getRouter();
+        $config['routeMatcher'] = $this->getRouteMatcher();
 
         $this->_routeCache = new RouteCache($config);
 
@@ -326,7 +325,7 @@ class RouteManager
 
         $routeRequestConfig = $this->routeRequest;
         unset($routeRequestConfig['class']);
-        $routeRequestConfig['router'] = $this->getRouter();
+        $routeRequestConfig['routeMatcher'] = $this->getRouteMatcher();
 
         return new $class($routeRequestConfig);
     }
@@ -342,7 +341,7 @@ class RouteManager
      */
     public function addRules(array $rules = []):void
     {
-        $this->getRouter()->addRules($rules);
+        $this->getRouteMatcher()->addRules($rules);
     }
 
     /**
@@ -439,8 +438,8 @@ class RouteManager
         $this->injectRules();
 
         if ($routeRequest instanceof RouteRequest) {
-            if (is_null($routeRequest->getRouter())) {
-                $routeRequest->setRouter($this->getRouter());
+            if (is_null($routeRequest->getRouteMatcher())) {
+                $routeRequest->setRouteMatcher($this->getRouteMatcher());
             }
         } else {
             $routeRequest = $this->createRouteRequest($routeRequest);
@@ -468,7 +467,7 @@ class RouteManager
     public function buildUrL(string $url = '',array $params = [],array $options = [])
     {
         $this->injectRules();
-        $result = $this->getRouter()->buildUrL($url,$params,$options);
+        $result = $this->getRouteMatcher()->buildUrL($url,$params,$options);
 
         // 缓存处理
         if ($this->onRouteCache) {

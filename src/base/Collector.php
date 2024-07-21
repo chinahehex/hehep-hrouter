@@ -88,23 +88,23 @@ abstract class Collector
 
         return $this;
     }
-    
 
-    public function buildCache(Router $router)
+
+    public function buildCache(RouteMatcher $routeMatcher)
     {
         $caches = [];
-        $caches = $this->buildAllRulesCache($router,$caches);
-        $caches = $this->buildGroupRulesCache($router,$caches);
-        $caches = $this->buildRouteCache($router,$caches);
+        $caches = $this->buildAllRulesCache($routeMatcher,$caches);
+        $caches = $this->buildGroupRulesCache($routeMatcher,$caches);
+        $caches = $this->buildRouteCache($routeMatcher,$caches);
 
         return $caches;
     }
 
-    public function restoreCache(Router $router,array $caches):void
+    public function restoreCache(RouteMatcher $routeMatcher,array $caches):void
     {
-        $this->restoreAllRulesCache($router,$caches);
-        $this->restoreGroupRulesCache($router,$caches);
-        $this->restoreRouteCache($router,$caches);
+        $this->restoreAllRulesCache($routeMatcher,$caches);
+        $this->restoreGroupRulesCache($routeMatcher,$caches);
+        $this->restoreRouteCache($routeMatcher,$caches);
 
         // 所有路由规则id转换
         $allRules = [];
@@ -123,7 +123,7 @@ abstract class Collector
         $this->groups = $groups;
     }
 
-    protected function buildAllRulesCache(Router $router,array $caches):array
+    protected function buildAllRulesCache(RouteMatcher $routeMatcher,array $caches):array
     {
         $allRulesCache = [];
         $del_attrs =  ['_paramRule','collector','subRules','router','callable',];
@@ -141,7 +141,7 @@ abstract class Collector
         return $caches;
     }
 
-    protected function restoreAllRulesCache(Router $router,array $caches)
+    protected function restoreAllRulesCache(RouteMatcher $routeMatcher,array $caches)
     {
         $allRules = [];
         foreach ($caches['allRules'] as $ruleId=>$properties) {
@@ -152,14 +152,14 @@ abstract class Collector
                 $rule = new Rule($properties);
             }
 
-            $rule->setRouter($router);
+            $rule->setRouteMatcher($routeMatcher);
             $allRules[$ruleId] = $rule;
         }
 
         $this->allRules = $allRules;
     }
 
-    protected function buildGroupRulesCache(Router $router,array $caches):array
+    protected function buildGroupRulesCache(RouteMatcher $routeMatcher,array $caches):array
     {
         $groupsCache = [];
         $del_attrs =  ['_paramRule','collector','subRules','router','callable',];
@@ -170,7 +170,7 @@ abstract class Collector
             }
             $groupsCache[$group->gid] = [
                 $properties,
-                $group->getCollector()->buildCache($router)
+                $group->getCollector()->buildCache($routeMatcher)
             ];
         }
 
@@ -179,7 +179,7 @@ abstract class Collector
         return $caches;
     }
 
-    protected function restoreGroupRulesCache(Router $router,array $caches)
+    protected function restoreGroupRulesCache(RouteMatcher $routeMatcher,array $caches)
     {
         $allGroups = [];
         foreach ($caches['groups'] as $ruleId=>$groupCache) {
@@ -197,12 +197,12 @@ abstract class Collector
                     $rule = new Rule($subProperties);
                 }
 
-                $rule->setRouter($router);
+                $rule->setRouteMatcher($routeMatcher);
                 $group->addSubRule($rule);
             }
 
-            $group->setRouter($router);
-            $group->getCollector()->restoreCache($router,$groupCache);
+            $group->setRouteMatcher($routeMatcher);
+            $group->getCollector()->restoreCache($routeMatcher,$groupCache);
 
             $allGroups[$ruleId] = $group;
         }
@@ -211,12 +211,16 @@ abstract class Collector
     }
 
     /**
-     * 添加路由规则至规则收集器
-     * @param Rule $rule
-     * @param array $methods
-     * @return $this
+     * 添加路由规则
+     *<B>说明：</B>
+     *<pre>
+     *  略
+     *</pre>
+     * @param Rule $rule 路由规则
+     * @param array $methods 路由请求类型
+     * @return void
      */
-    abstract public function addRule(Rule $rule,array $methods = []):self;
+    abstract public function addRule(Rule $rule,array $methods = []):Collector;
 
     /**
      * 路由规则初始化事件
@@ -241,7 +245,7 @@ abstract class Collector
      * @return array|Rule[]
      */
     abstract public function getUriRules(RouteRequest $routeRequest,string $method,string $type = ''):array;
-    abstract public function buildRouteCache(Router $router,$caches):array;
-    abstract public function restoreRouteCache(Router $router,array $caches):void;
+    abstract public function buildRouteCache(RouteMatcher $routeMatcher,$caches):array;
+    abstract public function restoreRouteCache(RouteMatcher $routeMatcher,array $caches):void;
 
 }

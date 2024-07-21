@@ -2,6 +2,7 @@
 namespace hrouter\tests\units;
 use hehe\core\hcontainer\ContainerManager;
 use hehe\core\hrouter\RouteManager;
+use hrouter\tests\common\AdminController;
 use hrouter\tests\TestCase;
 
 class AnnTest extends TestCase
@@ -15,7 +16,7 @@ class AnnTest extends TestCase
     {
         parent::setUp();
         $this->hcontainer = new ContainerManager();
-        $this->hcontainer->addScanRule(TestCase::class,RouteManager::class)
+        $this->hcontainer->addScanRule(AdminController::class,RouteManager::class)
             ->startScan();
     }
 
@@ -36,7 +37,6 @@ class AnnTest extends TestCase
 
         $routerRequest = $this->getRouter()->parseRequest($this->createRequest("admin/1"));
         $params = $routerRequest->getRouteParams();
-        var_dump($routerRequest->getRouteUrl());
 
         $this->assertTrue($routerRequest->getRouteUrl() == "admin/get" && $params['id'] == 1);
 

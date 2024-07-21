@@ -66,7 +66,7 @@ class GroupRule extends Rule
     public function getCollector():Collector
     {
         if (is_null($this->collector)) {
-            $class = $this->router->getCollectorClass();
+            $class = $this->routeMatcher->getCollectorClass();
             $this->collector = new $class();
         }
 
@@ -173,7 +173,7 @@ class GroupRule extends Rule
                     $opts[$name] = $value;
                 }
 
-                $rule->asOptions($opts)->setRouter($this->router);
+                $rule->asOptions($opts)->setRouteMatcher($this->routeMatcher);
                 $variableMethods = array_merge($variableMethods,$rule->getMethods());
             }
 
@@ -217,9 +217,9 @@ class GroupRule extends Rule
     protected function initGroup()
     {
         // 同步路由解释器合并路由信息
-        if ($this->router->getMergeRule() && $this->mergeRule === false) {
+        if ($this->routeMatcher->getMergeRule() && $this->mergeRule === false) {
             $this->mergeRule = true;
-            $this->mergeLen = $this->router->getMergeLen();
+            $this->mergeLen = $this->routeMatcher->getMergeLen();
         }
 
         $this->groupOptionAddtoSubRule();
@@ -233,18 +233,18 @@ class GroupRule extends Rule
             $this->action = $this->uri;
         }
 
-        $this->router->getCollector()->addGroup($this);
+        $this->routeMatcher->getCollector()->addGroup($this);
 
         if ($this->falseGroup) {
             // 添加子路由至路由解析器
-            $this->router->addRules($this->subRules);
+            $this->routeMatcher->addRules($this->subRules);
             // 分组转普通规则器
-            $this->router->addRule($this->groupToRule());
+            $this->routeMatcher->addRule($this->groupToRule());
         } else {
             // 添加当前分组至路由解析器
-            $this->router->addRule($this);
+            $this->routeMatcher->addRule($this);
             // 添加子路由至路由解析器
-            $this->router->addRules($this->subRules);
+            $this->routeMatcher->addRules($this->subRules);
             // 添加子路由至分组路由收集器
             $this->getCollector()->addRules($this->subRules);
         }
@@ -265,16 +265,16 @@ class GroupRule extends Rule
         // 执行静态缓存路由
         $constantUriRules = $this->getCollector()->getUriRules($routeRequest,$routeRequest->getRoutePathinfo(),'constant');
         if (!empty($constantUriRules)) {
-            $matchResult = $this->router->matchUriRules($constantUriRules,$routeRequest);
+            $matchResult = $this->routeMatcher->matchUriRules($constantUriRules,$routeRequest);
         }
 
         if ($matchResult === false) {
             foreach ([$request_method,Route::ANY_METHOD] as $method) {
                 $rules = $this->getCollector()->getUriRules($routeRequest,$method);
                 if ($this->mergeRule) {
-                    $matchResult = $this->router->matchMergeUriRules($rules,$routeRequest,$this->gid . '.uri.' . $method,$this->mergeLen);
+                    $matchResult = $this->routeMatcher->matchMergeUriRules($rules,$routeRequest,$this->gid . '.uri.' . $method,$this->mergeLen);
                 } else {
-                    $matchResult = $this->router->matchUriRules($rules,$routeRequest);
+                    $matchResult = $this->routeMatcher->matchUriRules($rules,$routeRequest);
                 }
 
                 if ($matchResult !== false) {
@@ -314,7 +314,7 @@ class GroupRule extends Rule
         // 执行静态缓存路由
         $constantActionRules = $this->getCollector()->getActionRules($url,'constant');
         if (!empty($constantActionRules)) {
-            $matchResult = $this->router->matchActionRules($constantActionRules,($constantActionRules[0])->getAction(),$params);
+            $matchResult = $this->routeMatcher->matchActionRules($constantActionRules,($constantActionRules[0])->getAction(),$params);
         }
 
         if ($matchResult === false) {
@@ -322,9 +322,9 @@ class GroupRule extends Rule
                 // 匹配分组路由规则器
                 $rules = $this->getCollector()->getActionRules($method);
                 if ($this->mergeRule) {
-                    $matchResult = $this->router->matchMergeActionRules($rules,$url,$params,$this->gid . '.act.' . $method,$this->mergeLen);
+                    $matchResult = $this->routeMatcher->matchMergeActionRules($rules,$url,$params,$this->gid . '.act.' . $method,$this->mergeLen);
                 } else {
-                    $matchResult = $this->router->matchActionRules($rules,$url,$params);
+                    $matchResult = $this->routeMatcher->matchActionRules($rules,$url,$params);
                 }
 
                 if ($matchResult !== false) {

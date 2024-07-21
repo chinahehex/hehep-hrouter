@@ -1,29 +1,30 @@
 <?php
 use hehe\core\hrouter\Route;
 
-Route::get("news/list", "news/list");
-Route::get("news/get/<id:\d+>", "news/get");
-Route::get("news/add", "news/doadd");
-Route::get("news/<action:\w+>", "news/<action>");
+Route::get("newsa/list", "newsa/list");
+Route::get("newsa/get/<id:\d+>", "newsa/get");
+Route::get("newsa/add", "newsa/doadd");
+Route::get("newsa/<action:\w+>", "newsa/<action>");
 
-Route::get("user/list", "user/list");
-Route::get("user/get/<id:\d+>", "user/get");
-Route::get("user/add", "user/doadd");
-Route::get("user/<action:\w+>", "user/<action>");
+Route::get("usera/list", "usera/list");
+Route::get("usera/get/<id:\d+>", "usera/get");
+Route::get("usera/add", "usera/doadd");
+Route::get("usera/<action:\w+>", "usera/<action>");
 
-Route::get("role/list", "role/list");
-Route::get("role/get/<id:\d+>", "role/get");
-Route::get("role/add", "role/doadd");
-Route::get("role/<action:\w+>", "role/<action>");
+Route::get("rolea/list", "rolea/list");
+Route::get("rolea/get/<id:\d+>", "rolea/get");
+Route::get("rolea/add", "rolea/doadd");
+Route::get("rolea/<action:\w+>", "rolea/<action>");
 
-Route::get("admin/list", "admin/list");
-Route::get("admin/get/<id:\d+>", "admin/get");
-Route::get("admin/add", "admin/doadd");
-Route::get("admin/<action:\w+>", "admin/<action>");
+Route::get("admina/list", "admina/list");
+Route::get("admina/get/<id:\d+>", "admina/get");
+Route::get("admina/add", "admina/doadd");
+Route::get("admina/<action:\w+>", "admina/<action>");
 
-Route::addGroup('blog', function () {
-    Route::get("list", "blog/list");
-    Route::get("get/<id:\d+>", "blog/get");
-    Route::get("<action:\w+>", "blog/<action>");
+Route::addGroup('bloga', function () {
+    Route::get("list", "bloga/list");
+    Route::get("get/<id:\d+>", "bloga/get");
+    Route::get("<action:\w+>", "bloga/<action>");
 });
+
 

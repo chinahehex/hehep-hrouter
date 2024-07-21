@@ -10,13 +10,6 @@ class ExampleTest extends TestCase
     protected function setUp()
     {
         parent::setUp();
-//        $this->getRouter()->setRouteCache([
-//            'routeFile'=>[
-//                __FILE__
-//            ],
-//            'cacheDir'=>'D:\work\logs',
-//            'timeout'=>0,
-//        ]);
     }
 
     // 单个测试之后(每个测试方法之后调用)

@@ -2,7 +2,7 @@
 namespace hehe\core\hrouter\fast;
 
 use hehe\core\hrouter\base\GroupRule;
-use hehe\core\hrouter\base\Router;
+use hehe\core\hrouter\base\RouteMatcher;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
 use hehe\core\hrouter\Route;
@@ -15,38 +15,10 @@ use hehe\core\hrouter\Route;
  *  此路由采用正则表达式处理，灵活，因此可能会存在性能问题
  *</pre>
  */
-class FastRouter extends Router
+class FastRouteMatcher extends RouteMatcher
 {
 
     protected $collectorClass = FastCollector::class;
-
-    /**
-     * 添加路由规则
-     *<B>说明：</B>
-     *<pre>
-     *  略
-     *</pre>
-     * @param Rule $rule 路由规则
-     * @return void
-     */
-    public function addRule(Rule $rule):void
-    {
-
-        $rule_methods = $rule->getMethods();
-        if (empty($rule_methods)) {
-            $rule_methods[] = Route::DEFAULT_METHOD;
-        }
-
-        if (!$rule->hasInitStatus()) {
-            // 路由规则未初始化
-            if ($this->lazy) {
-                $this->getCollector()->addRule($rule,$rule_methods);
-            } else {
-                $rule->init();
-            }
-        }
-
-    }
 
 
     /**
@@ -58,7 +30,7 @@ class FastRouter extends Router
      * @param RouteRequest $routeRequest 路由请求对象
      * @return RouteRequest
      */
-    public function parseRequest(RouteRequest $routeRequest):RouteRequest
+    public function matchRequest(RouteRequest $routeRequest):RouteRequest
     {
         $matchResult = false;
 
