@@ -316,7 +316,10 @@ $routeCache->requireRouteFile();
 $routeCache->checkCacheStatus();
 
 // 注入缓存路由至路由收集器
-$routeCache->injectRoute();
+$routeCache->injectRules();
+
+// 清除路由缓存
+$routeCache->clearRouteCache();
 
 // 开始解析路由请求
 $routeRequest = Route::parseRequest();

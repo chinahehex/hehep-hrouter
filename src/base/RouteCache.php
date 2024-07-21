@@ -76,6 +76,13 @@ class RouteCache
         }
     }
 
+    public function clearRouteCache()
+    {
+        if (file_exists($this->cacheFile)) {
+            unlink($this->cacheFile);
+        }
+    }
+
     public function addRouteFile(string ...$files):self
     {
         $this->routeFile = array_merge($this->routeFile,$files);
