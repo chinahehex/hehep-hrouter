@@ -36,6 +36,7 @@ class AnnTest extends TestCase
 
         $routerRequest = $this->getRouter()->parseRequest($this->createRequest("admin/1"));
         $params = $routerRequest->getRouteParams();
+        var_dump($routerRequest->getRouteUrl());
 
         $this->assertTrue($routerRequest->getRouteUrl() == "admin/get" && $params['id'] == 1);
 

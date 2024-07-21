@@ -2,10 +2,22 @@
 namespace hehe\core\hrouter;
 
 use hehe\core\hrouter\base\GroupRule;
+use hehe\core\hrouter\base\RouteCache;
+use hehe\core\hrouter\base\Router;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
 
 
+/**
+ * @method static void setRouterConfig(array $routerConfig = [])
+ * @method static void setRouteRequest(array $routeRequest)
+ * @method static void setRouteCache(array $routeCache)
+ * @method static RouteRequest parseRequest($routeRequest = null)
+ * @method static string buildUrL(string $url = '',array $params = [],array $options = [])
+ * @method static RouteCache getRouteCache()
+ * @method static Router getRouter()
+ * @method static RouteRequest createRouteRequest()
+ */
 class Route
 {
     const GET_METHOD = 'get';
@@ -16,6 +28,20 @@ class Route
     const HEAD_METHOD = 'head';
     const ANY_METHOD = '*';
     const DEFAULT_METHOD = '*';
+
+    /**
+     * 所有请求类型集合
+     * @var array
+     */
+    public static $allMethod = [
+        self::GET_METHOD,
+        self::POST_METHOD,
+        self::PUT_METHOD,
+        self::DELETE_METHOD,
+        self::PATCH_METHOD,
+        self::HEAD_METHOD,
+        self::ANY_METHOD,
+    ];
 
     /**
      * 路由规则定义
@@ -179,13 +205,9 @@ class Route
         return;
     }
 
-    public static function parseRequest($routeRequest = null):RouteRequest
+    public static function __callStatic($method, $params)
     {
-        return static::$routeManager->parseRequest($routeRequest);
+        return call_user_func_array([static::$routeManager,$method],$params);
     }
 
-    public static function buildUrL(string $url = '',array $params = [],array $options = [])
-    {
-        return static::$routeManager->buildUrL($url,$params,$options);
-    }
 }

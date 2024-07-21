@@ -54,13 +54,13 @@ class GroupRule extends Rule
      * 分组唯一标识
      * @var string
      */
-    public $hashId = '';
+    public $gid = '';
 
     public function __construct(array $attrs = [])
     {
         parent::__construct($attrs);
 
-        $this->hashId = spl_object_hash($this);
+        $this->gid = $this->ruleId;
     }
 
     public function getCollector():Collector
@@ -80,6 +80,12 @@ class GroupRule extends Rule
     public function addSubRule(Rule $rule):void
     {
         $this->subRules[] = $rule;
+        $rule->asOptions(['groupId'=>$this->gid]);
+    }
+
+    public function getSubRules():array
+    {
+        return $this->subRules;
     }
 
     public function asPrefix(string $prefix):self
@@ -112,7 +118,6 @@ class GroupRule extends Rule
      */
     protected function groupOptionAddtoSubRule()
     {
-
 
         $get_attributes = ['uri','action','method','suffix','domain','host','params','id','defaults'];
 
@@ -168,7 +173,6 @@ class GroupRule extends Rule
                     $opts[$name] = $value;
                 }
 
-                $opts['groupId'] = $this->hashId;
                 $rule->asOptions($opts)->setRouter($this->router);
                 $variableMethods = array_merge($variableMethods,$rule->getMethods());
             }
@@ -268,7 +272,7 @@ class GroupRule extends Rule
             foreach ([$request_method,Route::ANY_METHOD] as $method) {
                 $rules = $this->getCollector()->getUriRules($routeRequest,$method);
                 if ($this->mergeRule) {
-                    $matchResult = $this->router->matchMergeUriRules($rules,$routeRequest,$this->hashId . '.uri.' . $method,$this->mergeLen);
+                    $matchResult = $this->router->matchMergeUriRules($rules,$routeRequest,$this->gid . '.uri.' . $method,$this->mergeLen);
                 } else {
                     $matchResult = $this->router->matchUriRules($rules,$routeRequest);
                 }
@@ -318,7 +322,7 @@ class GroupRule extends Rule
                 // 匹配分组路由规则器
                 $rules = $this->getCollector()->getActionRules($method);
                 if ($this->mergeRule) {
-                    $matchResult = $this->router->matchMergeActionRules($rules,$url,$params,$this->hashId . '.act.' . $method,$this->mergeLen);
+                    $matchResult = $this->router->matchMergeActionRules($rules,$url,$params,$this->gid . '.act.' . $method,$this->mergeLen);
                 } else {
                     $matchResult = $this->router->matchActionRules($rules,$url,$params);
                 }

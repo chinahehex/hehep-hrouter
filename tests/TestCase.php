@@ -16,6 +16,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
     protected function setUp()
     {
         //$this->hrouter = new RouteManager();
+        $this->getRouter();
     }
 
     protected function getRouter():RouteManager

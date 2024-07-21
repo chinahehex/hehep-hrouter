@@ -20,6 +20,17 @@ abstract class Collector
      */
     protected $groups = [];
 
+    /**
+     * 所有路由规则对象
+     * @var array
+     */
+    protected $allRules = [];
+
+    public function getAllRules():array
+    {
+        return $this->allRules;
+    }
+
     public function addRules(array $rules):void
     {
         foreach ($rules as $rule) {
@@ -73,9 +84,130 @@ abstract class Collector
 
     public function addGroup(GroupRule $groupRule):self
     {
-        $this->groups[$groupRule->hashId] = $groupRule;
+        $this->groups[$groupRule->gid] = $groupRule;
 
         return $this;
+    }
+    
+
+    public function buildCache(Router $router)
+    {
+        $caches = [];
+        $caches = $this->buildAllRulesCache($router,$caches);
+        $caches = $this->buildGroupRulesCache($router,$caches);
+        $caches = $this->buildRouteCache($router,$caches);
+
+        return $caches;
+    }
+
+    public function restoreCache(Router $router,array $caches):void
+    {
+        $this->restoreAllRulesCache($router,$caches);
+        $this->restoreGroupRulesCache($router,$caches);
+        $this->restoreRouteCache($router,$caches);
+
+        // 所有路由规则id转换
+        $allRules = [];
+        foreach ($this->allRules as $rule) {
+            $allRules[$rule->ruleId] = $rule;
+        }
+
+        $this->allRules = $allRules;
+
+        // 所有分组id转换
+        $groups = [];
+        foreach ($this->groups as $group) {
+            $groups[$group->gid] = $group;
+        }
+
+        $this->groups = $groups;
+    }
+
+    protected function buildAllRulesCache(Router $router,array $caches):array
+    {
+        $allRulesCache = [];
+        $del_attrs =  ['_paramRule','collector','subRules','router','callable',];
+        foreach ($this->allRules as $rule) {
+            $properties = $rule->getAttributes();
+            foreach ($del_attrs as $del_name) {
+                unset($properties[$del_name]);
+            }
+
+            $allRulesCache[$rule->ruleId] = $properties;
+        }
+
+        $caches['allRules'] = $allRulesCache;
+
+        return $caches;
+    }
+
+    protected function restoreAllRulesCache(Router $router,array $caches)
+    {
+        $allRules = [];
+        foreach ($caches['allRules'] as $ruleId=>$properties) {
+            if ($properties['gid'] !== '') {
+                unset($properties['subRules']);
+                $rule = new GroupRule($properties);
+            } else {
+                $rule = new Rule($properties);
+            }
+
+            $rule->setRouter($router);
+            $allRules[$ruleId] = $rule;
+        }
+
+        $this->allRules = $allRules;
+    }
+
+    protected function buildGroupRulesCache(Router $router,array $caches):array
+    {
+        $groupsCache = [];
+        $del_attrs =  ['_paramRule','collector','subRules','router','callable',];
+        foreach ($this->groups as $group) {
+            $properties = $group->getAttributes();
+            foreach ($del_attrs as $del_name) {
+                unset($properties[$del_name]);
+            }
+            $groupsCache[$group->gid] = [
+                $properties,
+                $group->getCollector()->buildCache($router)
+            ];
+        }
+
+        $caches['groups'] = $groupsCache;
+
+        return $caches;
+    }
+
+    protected function restoreGroupRulesCache(Router $router,array $caches)
+    {
+        $allGroups = [];
+        foreach ($caches['groups'] as $ruleId=>$groupCache) {
+            list($properties,$groupCache) = $groupCache;
+            if (isset($this->allRules[$ruleId])) {
+                $group = $this->allRules[$ruleId];
+            } else {
+                $group = new GroupRule($properties);
+            }
+
+            foreach ($groupCache['allRules'] as $subId=>$subProperties) {
+                if (isset($this->allRules[$subId])) {
+                    $rule = $this->allRules[$subId];
+                } else {
+                    $rule = new Rule($subProperties);
+                }
+
+                $rule->setRouter($router);
+                $group->addSubRule($rule);
+            }
+
+            $group->setRouter($router);
+            $group->getCollector()->restoreCache($router,$groupCache);
+
+            $allGroups[$ruleId] = $group;
+        }
+
+        $this->groups = $allGroups;
     }
 
     /**
@@ -109,5 +241,7 @@ abstract class Collector
      * @return array|Rule[]
      */
     abstract public function getUriRules(RouteRequest $routeRequest,string $method,string $type = ''):array;
+    abstract public function buildRouteCache(Router $router,$caches):array;
+    abstract public function restoreRouteCache(Router $router,array $caches):void;
 
 }

@@ -264,6 +264,12 @@ class Rule
      */
     public $groupId = '';
 
+    /**
+     * 规则唯一id
+     * @var string
+     */
+    public $ruleId = '';
+
     public function __construct(array $attrs = [])
     {
         if (!empty($attrs)) {
@@ -271,6 +277,13 @@ class Rule
                 $this->{$name} = $value;
             }
         }
+
+        $this->ruleId = spl_object_hash($this);
+    }
+
+    public function getAttributes()
+    {
+        return get_object_vars($this);
     }
 
     /**
@@ -311,6 +324,7 @@ class Rule
 
         return $this;
     }
+
 
     /**
      * 是否已经初始化

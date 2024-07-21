@@ -1,6 +1,6 @@
 {
 	"name": "hehex/hehep-hrouter",
-	"description": "hehep-hrouter 是一个PHP 路由工具组件,支持注释注解,PHP8原生注解,支持分组路由,支持key/value结构存储路由,支持合并路由解析操作,快速定位路由，提高匹配效率",
+	"description": "hehep-hrouter 是一个PHP 路由工具组件,支持注释注解,PHP8原生注解,支持分组路由,支持key/value结构存储路由,支持合并路由解析操作,支持路由缓存,快速定位路由，提高匹配效率",
 	"license": "Apache-2.0",
 	"authors": [
 		{

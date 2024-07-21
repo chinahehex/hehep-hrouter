@@ -19,7 +19,7 @@ class FastRouter extends Router
 {
 
     protected $collectorClass = FastCollector::class;
-    
+
     /**
      * 添加路由规则
      *<B>说明：</B>
@@ -45,6 +45,7 @@ class FastRouter extends Router
                 $rule->init();
             }
         }
+
     }
 
 

@@ -6,6 +6,7 @@
 - 支持分组路由
 - 支持key/value结构存储路由,,快速定位路由，提高匹配效率
 - 支持合并路由解析,提高匹配效率
+- 支持路由缓存
 ## 安装
 - **gitee下载**:
 ```
@@ -179,6 +180,9 @@ $hrouter = new RouteManager([]);
 $hrouter->setRouteRequest([]);
 
 // 创建路由请求对象
+$hrouter->createRouteRequest();
+
+// 创建路由请求对象
 $routeRequest = new AppRouteRequest();
 
 // 解析URL地址
@@ -234,7 +238,6 @@ class FastRouter extends Router
     {
     
     }
-
 }
 
 ```
@@ -258,6 +261,9 @@ $hrouter->setRouterConfig([
     'lazy'=>true,
 ]);
 
+// 获取路由解释器对象
+$router = $hrouter->getRouter();
+
 // 解析URL地址
 $routeRequest = $hrouter->parseRequest();
 
@@ -265,6 +271,49 @@ $routeRequest = $hrouter->parseRequest();
 $action = $routeRequest->getRouteUrl();//  获取解析后的"路由地址"
 $params = $routeRequest->getRouteParams();// 获取解析后的额外参数
 $rule = $routeRequest->getRouteRule();// 获取匹配到的路由规则对象
+
+```
+
+## 路由缓存
+- 说明
+```
+路由缓存类:由于路由规则是动态生成的,所以需要缓存路由规则,以便下次使用
+路由缓存属性:
+routeFile:路由文件列表
+cacheDir:路由缓存目录
+cacheFile:路由缓存文件,如果路由缓存文件未设置,则生成路由缓存文件
+timeout:路由缓存过期时间,默认值:0,0 表示不过期
+```
+- 路由缓存使用示例
+```php
+use hehe\core\hrouter\RouteManager;
+use hehe\core\hrouter\Route;
+
+// 设置路由缓存配置
+Route::setRouteCache([
+    'cacheDir'=>'/www/cache/route',
+    'timeout'=>30,
+]);
+
+// 获取路由缓存对象
+$routeCache = Route::getRouteCache();
+$routeCache->addRouteFile('file1','file2');
+
+// 导入路由文件
+$routeCache->requireRouteFile();
+
+// 检查缓存是有效
+$routeCache->checkCacheStatus();
+
+// 注入缓存路由至路由收集器
+$routeCache->injectRoute();
+
+// 开始解析路由请求
+$routeRequest = Route::parseRequest();
+
+// 生成URL地址
+Route::buildUrL('user/get',["id"=>123]);
+
 
 ```
 
@@ -481,6 +530,7 @@ Route::get("user/<action:\w+>","app/user/AdminController@<action>");
 `[a-z]+`  | 26个小写字母 | 'http://\<lang:[z-z]+>.xxx.cn'
 `.+`,`.*`   | 任意字符 | 'user/get\<param:.+>'
 `\d{4}`  | 日期格式 | news/list/\<year:\d{4}>/\<month:\d{2}>/\<day:\d{2}>
+`[^\/]+`  | 匹配除了'/'以外的字符 | news/search/\<keyword:[^\/]+>
 
 
 

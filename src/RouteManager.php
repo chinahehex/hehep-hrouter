@@ -2,6 +2,7 @@
 namespace hehe\core\hrouter;
 
 use hehe\core\hrouter\base\GroupRule;
+use hehe\core\hrouter\base\RouteCache;
 use hehe\core\hrouter\base\Router;
 use hehe\core\hrouter\base\RouteRequest;
 use hehe\core\hrouter\base\Rule;
@@ -32,7 +33,7 @@ class RouteManager
      *</pre>
      * @var array
      */
-    public $customRouter = [
+    protected $customRouter = [
         // 路由类
         'class'=>FastRouter::class,
         //'class'=>RoutineRouter::class,
@@ -41,9 +42,9 @@ class RouteManager
         // url 是否加入域名
         'domain'=>false,// 生产url 地址时是否显示域名,
         // 是否合并路由解析
-        'mergeRule'=>false,
+        'mergeRule'=>true,
         // 一次合并的条数
-        'mergeLen'=>0,
+        'mergeLen'=>4,
         // 是否延迟加载规则
         'lazy'=>false,
     ];
@@ -56,8 +57,24 @@ class RouteManager
      *</pre>
      * @var array
      */
-    public $routeRequest = [
+    protected $routeRequest = [
         'class'=>'WebRouteRequest',
+    ];
+
+    /**
+     * 是否开启路由缓存
+     * @var bool
+     */
+    protected $onRouteCache = false;
+
+    /**
+     * 路由缓存
+     * @var array
+     */
+    protected $routeCache = [
+        'routeFile'=>[],
+        'cacheDir'=>'',
+        'timeout'=>0,
     ];
 
     /**
@@ -69,6 +86,8 @@ class RouteManager
      * @var Router
      */
     protected $_router;
+
+    protected $_routeCache;
 
     /**
      * 构造方法
@@ -91,6 +110,24 @@ class RouteManager
      * 路由规则注入路由解析器
      */
     protected function injectRules()
+    {
+
+        if ($this->onRouteCache) {
+            $routeCache = $this->getRouteCache();
+            if ($routeCache->checkCacheStatus()) {
+                $routeCache->injectRules();
+            } else {
+                $this->rulesAddtoRouter();
+            }
+        } else {
+            $this->rulesAddtoRouter();
+        }
+    }
+
+    /**
+     * 注入路由规则至路由解析器
+     */
+    protected function rulesAddtoRouter()
     {
         /** @var Rule[] $rules */
         $rules = [];
@@ -222,18 +259,49 @@ class RouteManager
      * 设置路由解析器配置
      * @param array $routerConfig 路由解析器配置
      */
-    public function setRouterConfig(?array $routerConfig = []):self
+    public function setRouterConfig(array $routerConfig = []):self
     {
-        $this->customRouter = $routerConfig;
+        $this->customRouter = array_merge($this->customRouter,$routerConfig);
 
         return $this;
     }
 
     public function setRouteRequest(array $routeRequest):self
     {
-        $this->routeRequest = $routeRequest;
+        $this->routeRequest = array_merge($this->routeRequest,$routeRequest);
 
         return $this;
+    }
+
+
+    /**
+     * 设置路由缓存参数
+     * @param array $routeCache
+     */
+    public function setRouteCache(array $routeCache): self
+    {
+        $this->routeCache = array_merge($this->routeCache,$routeCache);
+        $this->onRouteCache = true;
+
+        return $this;
+    }
+
+    /**
+     * 获取路由缓存对象
+     * @return array
+     */
+    public function getRouteCache(): RouteCache
+    {
+        if (!is_null($this->_routeCache)) {
+            return $this->_routeCache;
+        }
+
+        $config = $this->routeCache;
+        $config['router'] = $this->getRouter();
+
+        $this->_routeCache = new RouteCache($config);
+
+        return $this->_routeCache;
     }
 
     /**
@@ -380,6 +448,14 @@ class RouteManager
 
         $routeRequest->parseRequest();
 
+        // 缓存处理
+        if ($this->onRouteCache) {
+            $routeCache = $this->getRouteCache();
+            if (!$routeCache->checkCacheStatus()) {
+                $routeCache->writeRules();
+            }
+        }
+
         return $routeRequest;
     }
 
@@ -392,8 +468,17 @@ class RouteManager
     public function buildUrL(string $url = '',array $params = [],array $options = [])
     {
         $this->injectRules();
+        $result = $this->getRouter()->buildUrL($url,$params,$options);
 
-        return $this->getRouter()->buildUrL($url,$params,$options);
+        // 缓存处理
+        if ($this->onRouteCache) {
+            $routeCache = $this->getRouteCache();
+            if (!$routeCache->checkCacheStatus()) {
+                $routeCache->writeRules();
+            }
+        }
+
+        return $result;
     }
 
 }

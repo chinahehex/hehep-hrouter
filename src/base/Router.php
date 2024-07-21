@@ -1,9 +1,6 @@
 <?php
 namespace hehe\core\hrouter\base;
 
-
-use hehe\core\hrouter\base\RuleCollector;
-
 /**
  * 路由基类
  *<B>说明：</B>
@@ -134,6 +131,15 @@ abstract class Router
         return $this->mergeLen;
     }
 
+    public function asOptions(array $options):self
+    {
+        foreach ($options as $name=>$value) {
+            $this->{$name} = $value;
+        }
+
+        return $this;
+    }
+
     /**
      * 获取默认域名
      *<B>说明：</B>
@@ -203,7 +209,7 @@ abstract class Router
      * @param Rule[] $rules
      * @return array
      */
-    protected function mergeUriRulesRegex(array $rules = []):array
+    public function mergeUriRulesRegex(array $rules = []):array
     {
         $uriRegexs = [];
         $mergeRegexs = [];
@@ -229,7 +235,7 @@ abstract class Router
      * @param Rule[] $rules
      * @return array
      */
-    protected function mergeActionRulesRegex(array $rules = []):array
+    public function mergeActionRulesRegex(array $rules = []):array
     {
         $actionRegexs = [];
         $mergeRegexs = [];
@@ -289,7 +295,6 @@ abstract class Router
 
             $pathinfo = $routeRequest->getRoutePathinfo();
             if (!preg_match($regex,Rule::MERGE_VAR_FLAG.$pathinfo . Rule::MERGE_VAR_FLAG,$matches)) {
-                //continue;
                 $pathinfo = $routeRequest->getFullUrl();
                 if (!preg_match($regex,Rule::MERGE_VAR_FLAG.$pathinfo . Rule::MERGE_VAR_FLAG,$matches)) {
                     continue;
