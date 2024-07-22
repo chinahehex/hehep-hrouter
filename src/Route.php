@@ -2,6 +2,7 @@
 namespace hehe\core\hrouter;
 
 use hehe\core\hrouter\base\GroupRule;
+use hehe\core\hrouter\base\MatchingResult;
 use hehe\core\hrouter\base\RouteCache;
 use hehe\core\hrouter\base\RouteMatcher;
 use hehe\core\hrouter\base\RouteRequest;
@@ -12,7 +13,7 @@ use hehe\core\hrouter\base\Rule;
  * @method static void setRouteMatcher(array $routerConfig = [])
  * @method static void setRouteRequest(array $routeRequest)
  * @method static void setRouteCache(array $routeCache)
- * @method static RouteRequest parseRequest($routeRequest = null)
+ * @method static MatchingResult parseRequest($routeRequest = null)
  * @method static string buildUrL(string $url = '',array $params = [],array $options = [])
  * @method static RouteCache getRouteCache()
  * @method static RouteMatcher getRouteMatcher()

@@ -29,22 +29,22 @@ class AnnTest extends TestCase
     public function testUserRule()
     {
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("admin/doadd"));
-        $this->assertTrue($routerRequest->getRouteUrl() == "admin/add");
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("admin/doadd"));
+        $this->assertTrue($matchingResult->getUri() == "admin/add");
 
         $url = $this->getRouter()->buildUrl('admin/add');
         $this->assertTrue($url == "admin/doadd");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("admin/1"));
-        $params = $routerRequest->getRouteParams();
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("admin/1"));
+        $params = $matchingResult->getParams();
 
-        $this->assertTrue($routerRequest->getRouteUrl() == "admin/get" && $params['id'] == 1);
+        $this->assertTrue($matchingResult->getUri() == "admin/get" && $params['id'] == 1);
 
         $url = $this->getRouter()->buildUrl('admin/get',['id'=>1]);
         $this->assertTrue($url == "admin/1");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("admin/save"));
-        $this->assertTrue($routerRequest->getRouteUrl() == "admin/save");
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("admin/save"));
+        $this->assertTrue($matchingResult->getUri() == "admin/save");
 
         $url = $this->getRouter()->buildUrl('admin/save');
         $this->assertTrue($url == "admin/save");
@@ -54,15 +54,15 @@ class AnnTest extends TestCase
     public function testRoleRule()
     {
         if (!$this->checkVersion()) {return;}
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("role/doadd"));
-        $this->assertTrue($routerRequest->getRouteUrl() == "role/add");
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("role/doadd"));
+        $this->assertTrue($matchingResult->getUri() == "role/add");
 
         $url = $this->getRouter()->buildUrl('role/add');
         $this->assertTrue($url == "role/doadd");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("role/1"));
-        $params = $routerRequest->getRouteParams();
-        $this->assertTrue($routerRequest->getRouteUrl() == "role/get" && $params['id'] == 1);
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("role/1"));
+        $params = $matchingResult->getParams();
+        $this->assertTrue($matchingResult->getUri() == "role/get" && $params['id'] == 1);
 
         $url = $this->getRouter()->buildUrl('role/get',['id'=>1]);
         $this->assertTrue($url == "role/1");
@@ -71,15 +71,15 @@ class AnnTest extends TestCase
     public function testLogRule()
     {
         if (!$this->checkVersion()) {return;}
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("log/doadd"));
-        $this->assertTrue($routerRequest->getRouteUrl() == "log/add");
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("log/doadd"));
+        $this->assertTrue($matchingResult->getUri() == "log/add");
 
         $url = $this->getRouter()->buildUrl('log/add');
         $this->assertTrue($url == "log/doadd");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("log/1"));
-        $params = $routerRequest->getRouteParams();
-        $this->assertTrue($routerRequest->getRouteUrl() == "log/get" && $params['id'] == 1);
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("log/1"));
+        $params = $matchingResult->getParams();
+        $this->assertTrue($matchingResult->getUri() == "log/get" && $params['id'] == 1);
 
         $url = $this->getRouter()->buildUrl('log/get',['id'=>1]);
         $this->assertTrue($url == "log/1");
@@ -88,15 +88,15 @@ class AnnTest extends TestCase
     public function testAuthRule()
     {
         if (!$this->checkVersion()) {return;}
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("auth/doadd"));
-        $this->assertTrue($routerRequest->getRouteUrl() == "auth/add");
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("auth/doadd"));
+        $this->assertTrue($matchingResult->getUri() == "auth/add");
 
         $url = $this->getRouter()->buildUrl('auth/add');
         $this->assertTrue($url == "auth/doadd");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("auth/1"));
-        $params = $routerRequest->getRouteParams();
-        $this->assertTrue($routerRequest->getRouteUrl() == "auth/get" && $params['id'] == 1);
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("auth/1"));
+        $params = $matchingResult->getParams();
+        $this->assertTrue($matchingResult->getUri() == "auth/get" && $params['id'] == 1);
 
         $url = $this->getRouter()->buildUrl('auth/get',['id'=>1]);
         $this->assertTrue($url == "auth/1");
@@ -104,58 +104,58 @@ class AnnTest extends TestCase
 
     public function testGoodRestful()
     {
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("good","get"));
-        $this->assertTrue($routerRequest->getRouteUrl() == "good/index");
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("good","get"));
+        $this->assertTrue($matchingResult->getUri() == "good/index");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("good/create","get"));
-        $this->assertTrue($routerRequest->getRouteUrl() == "good/create");
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("good/create","get"));
+        $this->assertTrue($matchingResult->getUri() == "good/create");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("good","post"));
-        $this->assertTrue($routerRequest->getRouteUrl() == "good/save");
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("good","post"));
+        $this->assertTrue($matchingResult->getUri() == "good/save");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("good/1","get"));
-        $params = $routerRequest->getRouteParams();
-        $this->assertTrue($routerRequest->getRouteUrl() == "good/read" && $params['id'] == 1);
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("good/1","get"));
+        $params = $matchingResult->getParams();
+        $this->assertTrue($matchingResult->getUri() == "good/read" && $params['id'] == 1);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("good/1/edit","get"));
-        $params = $routerRequest->getRouteParams();
-        $this->assertTrue($routerRequest->getRouteUrl() == "good/edit" && $params['id'] == 1);
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("good/1/edit","get"));
+        $params = $matchingResult->getParams();
+        $this->assertTrue($matchingResult->getUri() == "good/edit" && $params['id'] == 1);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("good/1","put"));
-        $params = $routerRequest->getRouteParams();
-        $this->assertTrue($routerRequest->getRouteUrl() == "good/update" && $params['id'] == 1);
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("good/1","put"));
+        $params = $matchingResult->getParams();
+        $this->assertTrue($matchingResult->getUri() == "good/update" && $params['id'] == 1);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("good/1","delete"));
-        $params = $routerRequest->getRouteParams();
-        $this->assertTrue($routerRequest->getRouteUrl() == "good/delete" && $params['id'] == 1);
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("good/1","delete"));
+        $params = $matchingResult->getParams();
+        $this->assertTrue($matchingResult->getUri() == "good/delete" && $params['id'] == 1);
     }
 
     public function testOrderRestful()
     {
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("my/order","get"));
-        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/index");
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("my/order","get"));
+        $this->assertTrue($matchingResult->getUri() == "my/order/index");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("my/order/create","get"));
-        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/create");
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("my/order/create","get"));
+        $this->assertTrue($matchingResult->getUri() == "my/order/create");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("my/order","post"));
-        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/save");
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("my/order","post"));
+        $this->assertTrue($matchingResult->getUri() == "my/order/save");
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("my/order/1","get"));
-        $params = $routerRequest->getRouteParams();
-        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/read" && $params['id'] == 1);
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("my/order/1","get"));
+        $params = $matchingResult->getParams();
+        $this->assertTrue($matchingResult->getUri() == "my/order/read" && $params['id'] == 1);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("my/order/1/edit","get"));
-        $params = $routerRequest->getRouteParams();
-        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/edit" && $params['id'] == 1);
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("my/order/1/edit","get"));
+        $params = $matchingResult->getParams();
+        $this->assertTrue($matchingResult->getUri() == "my/order/edit" && $params['id'] == 1);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("my/order/1","put"));
-        $params = $routerRequest->getRouteParams();
-        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/update" && $params['id'] == 1);
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("my/order/1","put"));
+        $params = $matchingResult->getParams();
+        $this->assertTrue($matchingResult->getUri() == "my/order/update" && $params['id'] == 1);
 
-        $routerRequest = $this->getRouter()->parseRequest($this->createRequest("my/order/1","delete"));
-        $params = $routerRequest->getRouteParams();
-        $this->assertTrue($routerRequest->getRouteUrl() == "my/order/delete" && $params['id'] == 1);
+        $matchingResult = $this->getRouter()->parseRequest($this->createRequest("my/order/1","delete"));
+        $params = $matchingResult->getParams();
+        $this->assertTrue($matchingResult->getUri() == "my/order/delete" && $params['id'] == 1);
     }
 
 

@@ -28,9 +28,9 @@ class FastRouteMatcher extends RouteMatcher
      *  略
      *</pre>
      * @param RouteRequest $routeRequest 路由请求对象
-     * @return RouteRequest
+     * @return false|array
      */
-    public function matchRequest(RouteRequest $routeRequest):RouteRequest
+    public function matchRequest(RouteRequest $routeRequest)
     {
         $matchResult = false;
 
@@ -56,14 +56,7 @@ class FastRouteMatcher extends RouteMatcher
             }
         }
 
-        if ($matchResult !== false) {
-            $routeRequest->setMatchResult($matchResult);
-        } else {
-            // 匹配不到路由规则
-            $routeRequest->setMatchResult([$routeRequest->getRoutePathinfo(),[],null]);
-        }
-
-        return $routeRequest;
+        return $matchResult;
     }
 
 

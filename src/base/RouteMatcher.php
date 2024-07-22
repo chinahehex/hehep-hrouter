@@ -576,9 +576,9 @@ abstract class RouteMatcher
      *  略
      *</pre>
      * @param RouteRequest $routeRequest 路由请求对象
-     * @return void
+     * @return bool|array
      */
-    abstract public function matchRequest(RouteRequest $routeRequest):RouteRequest;
+    abstract public function matchRequest(RouteRequest $routeRequest);
 
     /**
      * 匹配action路由

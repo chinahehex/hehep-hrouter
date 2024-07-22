@@ -96,10 +96,10 @@ Route::get("user/get","user/get");
 $hrouter->addRoute("user/<id:\d+>","user/get","get");
 
 // 解析URL地址，并返回结果(假如访问网址"user/123")
-$routeRequest = $hrouter->parseRequest();
-$action = $routeRequest->getRouteUrl();//  获取解析后的"路由地址"
-$params = $routeRequest->getRouteParams();// 获取解析后的额外参数
-$rule = $routeRequest->getRouteRule();// 获取匹配到的路由规则对象
+$matchingResult = $hrouter->parseRequest();
+$action = $matchingResult->getUri();//  获取解析后的"路由地址"
+$params = $matchingResult->getParams();// 获取解析后的额外参数
+$rule = $matchingResult->getRule();// 获取匹配到的路由规则对象
 // $action 结果:user/get,$params: ["id"=>123]
 
 // 生成URL地址
@@ -126,10 +126,10 @@ Route::get("user/get","user/get");
 Route::addRoute("user/<id:\d+>","user/get","get");
 
 // 解析URL地址，并返回结果(假如访问网址"user/123")
-$routeRequest = Route::parseRequest();
-$action = $routeRequest->getRouteUrl();//  获取解析后的"路由地址"
-$params = $routeRequest->getRouteParams();// 获取解析后的额外参数
-$rule = $routeRequest->getRouteRule();// 获取匹配到的路由规则对象
+$matchingResult = Route::parseRequest();
+$action = $matchingResult->getUri();//  获取解析后的"路由地址"
+$params = $matchingResult->getParams();// 获取解析后的额外参数
+$rule = $matchingResult->getRule();// 获取匹配到的路由规则对象
 // $action 结果:user/get,$params: ["id"=>123]
 
 // 生成URL地址
@@ -195,12 +195,12 @@ $hrouter->createRouteRequest();
 $routeRequest = new AppRouteRequest();
 
 // 解析URL地址
-$hrouter->parseRequest($routeRequest);
+$matchingResult = $hrouter->parseRequest($routeRequest);
 
 // 获取解析结果
-$action = $routeRequest->getRouteUrl();//  获取解析后的"路由地址"
-$params = $routeRequest->getRouteParams();// 获取解析后的额外参数
-$rule = $routeRequest->getRouteRule();// 获取匹配到的路由规则对象
+$action = $matchingResult->getUri();//  获取解析后的"路由地址"
+$params = $matchingResult->getParams();// 获取解析后的额外参数
+$rule = $matchingResult->getRule();// 获取匹配到的路由规则对象
 
 ```
 
@@ -275,12 +275,12 @@ $hrouter->setRouteMatcher([
 $routeMatcher = $hrouter->getRouteMatcher();
 
 // 解析URL地址
-$routeRequest = $hrouter->parseRequest();
+$matchingResult = $hrouter->parseRequest();
 
 // 获取解析结果
-$action = $routeRequest->getRouteUrl();//  获取解析后的"路由地址"
-$params = $routeRequest->getRouteParams();// 获取解析后的额外参数
-$rule = $routeRequest->getRouteRule();// 获取匹配到的路由规则对象
+$action = $matchingResult->getUri();//  获取解析后的"路由地址"
+$params = $matchingResult->getParams();// 获取解析后的额外参数
+$rule = $matchingResult->getRule();// 获取匹配到的路由规则对象
 
 ```
 
@@ -322,7 +322,7 @@ $routeCache->injectRules();
 $routeCache->clearRouteCache();
 
 // 开始解析路由请求
-$routeRequest = Route::parseRequest();
+$matchingResult = Route::parseRequest();
 
 // 生成URL地址
 Route::buildUrL('user/get',["id"=>123]);

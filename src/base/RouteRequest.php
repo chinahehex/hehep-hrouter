@@ -1,6 +1,8 @@
 <?php
 namespace hehe\core\hrouter\base;
 
+use hehe\core\hrouter\RouteManager;
+
 /**
  * 路由请求类
  *<B>说明：</B>
@@ -11,34 +13,21 @@ namespace hehe\core\hrouter\base;
 class RouteRequest
 {
     /**
-     * 解析得到的url pathion地址
-     * @var string
-     */
-    protected $url = '';
-
-    /**
-     * 解析后得到的参数,一般为问号的参数,比如?id=1
-     * @var array
-     */
-    protected $params = [];
-
-    /**
-     * 路由解析器对象
-     * @var RouteMatcher
-     */
-    protected $routeMatcher;
-
-    /**
-     * 匹配到的路由对象
-     * @var Rule
-     */
-    protected $rule;
-
-    /**
      * pathinfo 缓存地址
      * @var string
      */
     protected $_pathinfo;
+
+    /**
+     * 路由管理器
+     * @var RouteManager
+     */
+    protected $routeManager;
+
+    /**
+     * @var MatchingResult
+     */
+    protected $matchingResult;
 
     public function __construct(array $attrs = [])
     {
@@ -121,39 +110,24 @@ class RouteRequest
      * 设置解析的结果
      * @param $matchResult
      */
-    public function setMatchResult(?array $matchResult):void
+    public function setMatchingResult(MatchingResult $matchingResult):void
     {
-        if (!empty($matchResult)) {
-            list($url,$params,$rule) = $matchResult;
-            $this->url = $url;
-            $this->params = array_merge($this->params,$params);
-            $this->rule = $rule;
-        }
+        $this->matchingResult = $matchingResult;
     }
 
-    public function setRouteMatcher(RouteMatcher $routeMatcher):void
+    public function getMatchingResult():?MatchingResult
     {
-        $this->routeMatcher = $routeMatcher;
+        return $this->matchingResult;
     }
 
-    public function getRouteMatcher():?RouteMatcher
+    public function setRouteManager(RouteManager $routeManager):void
     {
-        return $this->routeMatcher;
+        $this->routeManager = $routeManager;
     }
 
-    public function getRouteUrl():string
+    public function getRouteManager():?RouteManager
     {
-        return $this->url;
-    }
-
-    public function getRouteParams():array
-    {
-        return $this->params;
-    }
-
-    public function getRouteRule():?Rule
-    {
-        return $this->rule;
+        return $this->routeManager;
     }
 
     /**
@@ -165,7 +139,7 @@ class RouteRequest
      */
     public function parseRequest():void
     {
-        $this->routeMatcher->matchRequest($this);
+        $this->routeManager->parseRequest($this);
     }
 
     /**
@@ -181,6 +155,10 @@ class RouteRequest
      */
     public function buildUrl(string $url = '',array $params = [],array $options = []):string
     {
+        if ($url === '') {
+            $url = $this->matchingResult->getUri();
+        }
+
         return $this->routeMatcher->buildUrL($url,$params,$options);
     }
 

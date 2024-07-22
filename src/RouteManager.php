@@ -2,6 +2,7 @@
 namespace hehe\core\hrouter;
 
 use hehe\core\hrouter\base\GroupRule;
+use hehe\core\hrouter\base\MatchingResult;
 use hehe\core\hrouter\base\RouteCache;
 use hehe\core\hrouter\base\RouteMatcher;
 use hehe\core\hrouter\base\RouteRequest;
@@ -325,7 +326,6 @@ class RouteManager
 
         $routeRequestConfig = $this->routeRequest;
         unset($routeRequestConfig['class']);
-        $routeRequestConfig['routeMatcher'] = $this->getRouteMatcher();
 
         return new $class($routeRequestConfig);
     }
@@ -431,23 +431,36 @@ class RouteManager
      *  略
      *</pre>
      * @param array|RouteRequest $routeRequest
-     * @return RouteRequest
+     * @return MatchingResult
      */
-    public function parseRequest($routeRequest = null):RouteRequest
+    public function parseRequest($routeRequest = null):MatchingResult
     {
+        // 注入路由规则
         $this->injectRules();
 
+        // 创建路由请求对象
         if ($routeRequest instanceof RouteRequest) {
-            if (is_null($routeRequest->getRouteMatcher())) {
-                $routeRequest->setRouteMatcher($this->getRouteMatcher());
+            if (is_null($routeRequest->getRouteManager())) {
+                $routeRequest->setRouteManager($this);
             }
         } else {
             $routeRequest = $this->createRouteRequest($routeRequest);
+            $routeRequest->setRouteManager($this);
         }
 
-        $routeRequest->parseRequest();
+        // 匹配路由规则
+        $routeMatcher = $this->getRouteMatcher();
+        $matchResult = $routeMatcher->matchRequest($routeRequest);
+        if ($matchResult !== false) {
+            $matchingResult = new MatchingResult($matchResult[0],$matchResult[1],$matchResult[2]);
+        } else {
+            // 匹配不到路由规则
+            $matchingResult = new MatchingResult($routeRequest->getRoutePathinfo());
+        }
 
-        // 缓存处理
+        $routeRequest->setMatchingResult($matchingResult);
+
+        // 路由缓存处理
         if ($this->onRouteCache) {
             $routeCache = $this->getRouteCache();
             if (!$routeCache->checkCacheStatus()) {
@@ -455,7 +468,7 @@ class RouteManager
             }
         }
 
-        return $routeRequest;
+        return $matchingResult;
     }
 
     /**
@@ -466,10 +479,13 @@ class RouteManager
      */
     public function buildUrL(string $url = '',array $params = [],array $options = [])
     {
+        // 注入路由规则
         $this->injectRules();
-        $result = $this->getRouteMatcher()->buildUrL($url,$params,$options);
 
-        // 缓存处理
+        // 生成url地址
+        $matchResult = $this->getRouteMatcher()->buildUrL($url,$params,$options);
+
+        // 路由缓存处理
         if ($this->onRouteCache) {
             $routeCache = $this->getRouteCache();
             if (!$routeCache->checkCacheStatus()) {
@@ -477,7 +493,7 @@ class RouteManager
             }
         }
 
-        return $result;
+        return $matchResult;
     }
 
 }

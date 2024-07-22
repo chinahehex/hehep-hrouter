@@ -36,46 +36,46 @@ class RouteCacheTest extends TestCase
         Route::getRouteCache()->requireRouteFile();
 
 
-        $routeRequest = Route::parseRequest($this->createRequest("newsa/list"));
-        $this->assertTrue($routeRequest->getRouteUrl() === 'newsa/list');
+        $matchingResult = Route::parseRequest($this->createRequest("newsa/list"));
+        $this->assertTrue($matchingResult->getUri() === 'newsa/list');
         $this->assertTrue(Route::buildUrL("newsa/list") === 'newsa/list');
 
-        $routeRequest = Route::parseRequest($this->createRequest("newsa/get/1"));
-        $this->assertTrue($routeRequest->getRouteUrl() === 'newsa/get' && ($routeRequest->getRouteParams())['id'] == 1);
+        $matchingResult = Route::parseRequest($this->createRequest("newsa/get/1"));
+        $this->assertTrue($matchingResult->getUri() === 'newsa/get' && ($matchingResult->getParams())['id'] == 1);
         $this->assertTrue(Route::buildUrL("newsa/get",['id'=>1]) === 'newsa/get/1');
 
-        $routeRequest = Route::parseRequest($this->createRequest("newsa/save"));
-        $this->assertTrue($routeRequest->getRouteUrl() === 'newsa/save');
+        $matchingResult = Route::parseRequest($this->createRequest("newsa/save"));
+        $this->assertTrue($matchingResult->getUri() === 'newsa/save');
         $this->assertTrue(Route::buildUrL("newsa/save") === 'newsa/save');
 
 
-        $routeRequest = Route::parseRequest($this->createRequest("rolea/get/1"));
-        $this->assertTrue($routeRequest->getRouteUrl() === 'rolea/get' && ($routeRequest->getRouteParams())['id'] == 1);
+        $matchingResult = Route::parseRequest($this->createRequest("rolea/get/1"));
+        $this->assertTrue($matchingResult->getUri() === 'rolea/get' && ($matchingResult->getParams())['id'] == 1);
         $this->assertTrue(Route::buildUrL("rolea/get",['id'=>1]) === 'rolea/get/1');
 
-        $routeRequest = Route::parseRequest($this->createRequest("bloga/get/1"));
-        $this->assertTrue($routeRequest->getRouteUrl() === 'bloga/get' && ($routeRequest->getRouteParams())['id'] == 1);
+        $matchingResult = Route::parseRequest($this->createRequest("bloga/get/1"));
+        $this->assertTrue($matchingResult->getUri() === 'bloga/get' && ($matchingResult->getParams())['id'] == 1);
         $this->assertTrue(Route::buildUrL("bloga/get",['id'=>1]) === 'bloga/get/1');
 
-        $routeRequest = Route::parseRequest($this->createRequest("rolea/get/1"));
-        $this->assertTrue($routeRequest->getRouteUrl() === 'rolea/get' && ($routeRequest->getRouteParams())['id'] == 1);
+        $matchingResult = Route::parseRequest($this->createRequest("rolea/get/1"));
+        $this->assertTrue($matchingResult->getUri() === 'rolea/get' && ($matchingResult->getParams())['id'] == 1);
         $this->assertTrue(Route::buildUrL("rolea/get",['id'=>1]) === 'rolea/get/1');
 
-        $routeRequest = Route::parseRequest($this->createRequest("usera/get/1"));
-        $this->assertTrue($routeRequest->getRouteUrl() === 'usera/get' && ($routeRequest->getRouteParams())['id'] == 1);
+        $matchingResult = Route::parseRequest($this->createRequest("usera/get/1"));
+        $this->assertTrue($matchingResult->getUri() === 'usera/get' && ($matchingResult->getParams())['id'] == 1);
         $this->assertTrue(Route::buildUrL("usera/get",['id'=>1]) === 'usera/get/1');
 
-        $routeRequest = Route::parseRequest($this->createRequest("rolea/get/1"));
-        $this->assertTrue($routeRequest->getRouteUrl() === 'rolea/get' && ($routeRequest->getRouteParams())['id'] == 1);
+        $matchingResult = Route::parseRequest($this->createRequest("rolea/get/1"));
+        $this->assertTrue($matchingResult->getUri() === 'rolea/get' && ($matchingResult->getParams())['id'] == 1);
         $this->assertTrue(Route::buildUrL("rolea/get",['id'=>1]) === 'rolea/get/1');
 
-        $routeRequest = Route::parseRequest($this->createRequest("bloga/get/1"));
-        $this->assertTrue($routeRequest->getRouteUrl() === 'bloga/get' && ($routeRequest->getRouteParams())['id'] == 1);
+        $matchingResult = Route::parseRequest($this->createRequest("bloga/get/1"));
+        $this->assertTrue($matchingResult->getUri() === 'bloga/get' && ($matchingResult->getParams())['id'] == 1);
         $this->assertTrue(Route::buildUrL("bloga/get",['id'=>1]) === 'bloga/get/1');
 
 
-        $routeRequest = Route::parseRequest($this->createRequest("bloga/get/1"));
-        $this->assertTrue($routeRequest->getRouteUrl() === 'bloga/get' && ($routeRequest->getRouteParams())['id'] == 1);
+        $matchingResult = Route::parseRequest($this->createRequest("bloga/get/1"));
+        $this->assertTrue($matchingResult->getUri() === 'bloga/get' && ($matchingResult->getParams())['id'] == 1);
         $this->assertTrue(Route::buildUrL("bloga/get",['id'=>1]) === 'bloga/get/1');
 
 

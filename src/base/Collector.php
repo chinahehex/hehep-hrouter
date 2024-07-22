@@ -126,7 +126,7 @@ abstract class Collector
     protected function buildAllRulesCache(RouteMatcher $routeMatcher,array $caches):array
     {
         $allRulesCache = [];
-        $del_attrs =  ['_paramRule','collector','subRules','router','callable',];
+        $del_attrs =  ['_paramRule','collector','subRules','routeMatcher','callable',];
         foreach ($this->allRules as $rule) {
             $properties = $rule->getAttributes();
             foreach ($del_attrs as $del_name) {
@@ -162,7 +162,7 @@ abstract class Collector
     protected function buildGroupRulesCache(RouteMatcher $routeMatcher,array $caches):array
     {
         $groupsCache = [];
-        $del_attrs =  ['_paramRule','collector','subRules','router','callable',];
+        $del_attrs =  ['_paramRule','collector','subRules','routeMatcher','callable',];
         foreach ($this->groups as $group) {
             $properties = $group->getAttributes();
             foreach ($del_attrs as $del_name) {
