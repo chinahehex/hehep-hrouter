@@ -672,7 +672,6 @@ class ExampleTest extends TestCase
         $this->assertTrue($this->getRouter()->buildUrL("blog/doadd") == "blog/add.shtml");
 
         $matchingResult = $this->getRouter()->parseRequest($this->createRequest("blog/bxd","get"));
-        var_dump($matchingResult->getUri());
         $this->assertTrue($matchingResult->getUri() == "blog/bxd");
 
         $matchingResult = $this->getRouter()->parseRequest($this->createRequest("blog/get/2","get"));

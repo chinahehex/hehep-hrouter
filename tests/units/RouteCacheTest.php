@@ -15,30 +15,21 @@ class RouteCacheTest extends TestCase
     // 单个测试之后(每个测试方法之后调用)
     protected function tearDown()
     {
+        //Route::getRouteCache()->clearRouteCache();
+
         Route::resetRoute();
+
     }
-
-//    public function testok()
-//    {
-//        $url = 'http://www.baidu.com';
-//        $url = 'news_id';
-//        $url = 'http://www.baidu.com:80/user/ok';
-////        $url = 'www.baidu.com/user/ok';
-////        $url = 'http://www.baidu.com/user/ok.html';
-////        $url = 'http://www.baidu.com/user/ok?id=1';
-//        $url = 'http://www.baidu.com/user/ok?id=1#red';
-////        $url = 'user/ok';
-////        $url = 'user/ok.html';
-//        $info = parse_url($url);
-//        var_dump($info);
-//    }
-
 
     public function testRoute()
     {
 //        require dirname(__DIR__,1) . '/common/Route.php';
 //        require dirname(__DIR__,1) . '/common/Route1.php';
-
+        Route::setRouteMatcher([
+            'mergeRule'=>true,
+            'mergeLen'=>3,
+            'lazy'=>false
+        ]);
         Route::setRouteCache([
             'routeFile'=>[
                 dirname(__DIR__,1) . '/common/Route.php',
@@ -54,7 +45,7 @@ class RouteCacheTest extends TestCase
         $matchingResult = Route::parseRequest($this->createRequest("newsa/list"));
         $this->assertTrue($matchingResult->getUri() === 'newsa/list');
         $this->assertTrue(Route::buildUrL("newsa/list") === 'newsa/list');
-
+//
         $matchingResult = Route::parseRequest($this->createRequest("newsa/get/1"));
         $this->assertTrue($matchingResult->getUri() === 'newsa/get' && ($matchingResult->getParams())['id'] == 1);
         $this->assertTrue(Route::buildUrL("newsa/get",['id'=>1]) === 'newsa/get/1');
