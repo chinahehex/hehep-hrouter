@@ -219,17 +219,15 @@ abstract class Collector
      *  略
      *</pre>
      * @param Rule $rule 路由规则
-     * @param RouteMatcher $routeMatcher 路由解析器
      * @return void
      */
-    abstract public function addRule(Rule $rule):Collector;
+    abstract public function addRule(Rule $rule):void;
 
     /**
      * 路由规则初始化事件
      * @param Rule $rule
      */
     abstract public function initRule(Rule $rule):void;
-
 
     /**
      * 指定路由地址返回对应的变量路由
@@ -247,7 +245,18 @@ abstract class Collector
      * @return array|Rule[]
      */
     abstract public function getUriRules(RouteRequest $routeRequest,string $method,string $type = ''):array;
+
+    /**
+     * 构建路由缓存
+     * @param array $caches
+     * @return array
+     */
     abstract public function buildRouteCache(array $caches):array;
+
+    /**
+     * 恢复路由缓存
+     * @param array $caches
+     */
     abstract public function restoreRouteCache(array $caches):void;
 
 }

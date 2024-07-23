@@ -980,6 +980,8 @@ class Rule
      * 略
      *</pre>
      * @param string $pathinfo 路由地址 控制器/方法
+     * @param RouteRequest $routeRequest 路由请求对象
+     * @param array $matches 匹配结果,此参数一般来源合并路由参数
      * @return array [URL地址,URL 参数]
      */
     public function parseRequest(string $pathinfo,?RouteRequest $routeRequest = null,array $matches = [])
@@ -1008,6 +1010,7 @@ class Rule
      *</pre>
      * @param string $url url 地址
      * @param array $params url 参数
+     * @param array $matches 匹配结果,此参数一般来源合并路由参数
      * @return array [URL地址,URL 参数]
      */
     public function parseUrL(string $url = '',array $params = [],array $matches = [])

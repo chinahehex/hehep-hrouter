@@ -36,7 +36,7 @@ class FastCollector extends Collector
      */
     protected $variableUriRules = [];
 
-    public function addRule(Rule $rule):Collector
+    public function addRule(Rule $rule):void
     {
         $this->allRules[$rule->ruleId] = $rule;
 
@@ -47,7 +47,6 @@ class FastCollector extends Collector
             $this->addRouteRule($rule);
         }
 
-        return $this;
     }
 
     protected function addRouteRule(Rule $rule)
