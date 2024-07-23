@@ -8,6 +8,10 @@ use hehe\core\hrouter\Route;
 
 abstract class Collector
 {
+    /**
+     * @var RouteMatcher
+     */
+    protected $routeMatcher;
 
     /**
      * 合并路由缓存
@@ -31,11 +35,9 @@ abstract class Collector
         return $this->allRules;
     }
 
-    public function addRules(array $rules):void
+    public function setRouteMatcher(RouteMatcher $routeMatcher):void
     {
-        foreach ($rules as $rule) {
-            $this->addRule($rule);
-        }
+        $this->routeMatcher = $routeMatcher;
     }
 
     public function setMergeCache(string $key,int $ruleIndex,array $regex):void
@@ -63,7 +65,7 @@ abstract class Collector
      * @param int $ruleSize
      * @return bool
      */
-    public function isActiveCache(string $key,int $ruleSize):bool
+    public function checkMergeCacheStatus(string $key,int $ruleSize):bool
     {
         if (!isset($this->mergeCaches[$key]) || !isset($this->mergeCaches[$key]['-'])) {
             return false;
@@ -76,7 +78,7 @@ abstract class Collector
         return true;
     }
 
-    public function initKeyCache(string $key,int $ruleSize):void
+    public function resetKeyCache(string $key,int $ruleSize):void
     {
         unset($this->mergeCaches[$key]);
         $this->mergeCaches[$key]['-'] = $ruleSize;
@@ -90,21 +92,21 @@ abstract class Collector
     }
 
 
-    public function buildCache(RouteMatcher $routeMatcher)
+    public function buildCache()
     {
         $caches = [];
-        $caches = $this->buildAllRulesCache($routeMatcher,$caches);
-        $caches = $this->buildGroupRulesCache($routeMatcher,$caches);
-        $caches = $this->buildRouteCache($routeMatcher,$caches);
+        $caches = $this->buildAllRulesCache($caches);
+        $caches = $this->buildGroupRulesCache($caches);
+        $caches = $this->buildRouteCache($caches);
 
         return $caches;
     }
 
-    public function restoreCache(RouteMatcher $routeMatcher,array $caches):void
+    public function restoreCache(array $caches):void
     {
-        $this->restoreAllRulesCache($routeMatcher,$caches);
-        $this->restoreGroupRulesCache($routeMatcher,$caches);
-        $this->restoreRouteCache($routeMatcher,$caches);
+        $this->restoreAllRulesCache($caches);
+        $this->restoreGroupRulesCache($caches);
+        $this->restoreRouteCache($caches);
 
         // 所有路由规则id转换
         $allRules = [];
@@ -123,7 +125,7 @@ abstract class Collector
         $this->groups = $groups;
     }
 
-    protected function buildAllRulesCache(RouteMatcher $routeMatcher,array $caches):array
+    protected function buildAllRulesCache(array $caches):array
     {
         $allRulesCache = [];
         $del_attrs =  ['_paramRule','collector','subRules','routeMatcher','callable',];
@@ -141,25 +143,25 @@ abstract class Collector
         return $caches;
     }
 
-    protected function restoreAllRulesCache(RouteMatcher $routeMatcher,array $caches)
+    protected function restoreAllRulesCache(array $caches)
     {
         $allRules = [];
         foreach ($caches['allRules'] as $ruleId=>$properties) {
-            if ($properties['gid'] !== '') {
+            if (isset($properties['gid'])) {
                 unset($properties['subRules']);
                 $rule = new GroupRule($properties);
             } else {
                 $rule = new Rule($properties);
             }
 
-            $rule->setRouteMatcher($routeMatcher);
+            $rule->setRouteMatcher($this->routeMatcher);
             $allRules[$ruleId] = $rule;
         }
 
         $this->allRules = $allRules;
     }
 
-    protected function buildGroupRulesCache(RouteMatcher $routeMatcher,array $caches):array
+    protected function buildGroupRulesCache(array $caches):array
     {
         $groupsCache = [];
         $del_attrs =  ['_paramRule','collector','subRules','routeMatcher','callable',];
@@ -170,7 +172,7 @@ abstract class Collector
             }
             $groupsCache[$group->gid] = [
                 $properties,
-                $group->getCollector()->buildCache($routeMatcher)
+                $group->getCollector()->buildCache()
             ];
         }
 
@@ -179,7 +181,7 @@ abstract class Collector
         return $caches;
     }
 
-    protected function restoreGroupRulesCache(RouteMatcher $routeMatcher,array $caches)
+    protected function restoreGroupRulesCache(array $caches)
     {
         $allGroups = [];
         foreach ($caches['groups'] as $ruleId=>$groupCache) {
@@ -197,12 +199,12 @@ abstract class Collector
                     $rule = new Rule($subProperties);
                 }
 
-                $rule->setRouteMatcher($routeMatcher);
+                $rule->setRouteMatcher($this->routeMatcher);
                 $group->addSubRule($rule);
             }
 
-            $group->setRouteMatcher($routeMatcher);
-            $group->getCollector()->restoreCache($routeMatcher,$groupCache);
+            $group->setRouteMatcher($this->routeMatcher);
+            $group->getCollector()->restoreCache($groupCache);
 
             $allGroups[$ruleId] = $group;
         }
@@ -217,10 +219,10 @@ abstract class Collector
      *  略
      *</pre>
      * @param Rule $rule 路由规则
-     * @param array $methods 路由请求类型
+     * @param RouteMatcher $routeMatcher 路由解析器
      * @return void
      */
-    abstract public function addRule(Rule $rule,array $methods = []):Collector;
+    abstract public function addRule(Rule $rule):Collector;
 
     /**
      * 路由规则初始化事件
@@ -245,7 +247,7 @@ abstract class Collector
      * @return array|Rule[]
      */
     abstract public function getUriRules(RouteRequest $routeRequest,string $method,string $type = ''):array;
-    abstract public function buildRouteCache(RouteMatcher $routeMatcher,$caches):array;
-    abstract public function restoreRouteCache(RouteMatcher $routeMatcher,array $caches):void;
+    abstract public function buildRouteCache(array $caches):array;
+    abstract public function restoreRouteCache(array $caches):void;
 
 }

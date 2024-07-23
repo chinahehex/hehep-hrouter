@@ -2,6 +2,8 @@
 namespace hehe\core\hrouter\base;
 
 
+use hehe\core\hrouter\Route;
+
 /**
  * 路由规则基类
  */
@@ -287,6 +289,15 @@ class Rule
     }
 
     /**
+     * 是否分组规则
+     * @return bool
+     */
+    public function isGroupRule()
+    {
+        return $this->groupId !== '';
+    }
+
+    /**
      * 初始化规则
      *<B>说明：</B>
      *<pre>
@@ -427,6 +438,9 @@ class Rule
             }
 
             $this->_methods = $methods;
+        } else {
+            // 默认请求类型
+            $methods[] = Route::DEFAULT_METHOD;
         }
 
         return $methods;

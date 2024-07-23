@@ -141,7 +141,7 @@ class RouteCache
      */
     public function writeRules()
     {
-        $routesCache = $this->routeMatcher->getCollector()->buildCache($this->routeMatcher);
+        $routesCache = $this->routeMatcher->getCollector()->buildCache();
         file_put_contents($this->cacheFile, "<?php\n\nreturn " . var_export($routesCache, true) . ";\n");
     }
 
@@ -151,7 +151,7 @@ class RouteCache
     public function injectRules()
     {
         $caches = require($this->cacheFile);
-        $this->routeMatcher->getCollector()->restoreCache($this->routeMatcher,$caches);
+        $this->routeMatcher->getCollector()->restoreCache($caches);
     }
 
 

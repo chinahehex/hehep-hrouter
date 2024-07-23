@@ -36,32 +36,70 @@ class FastCollector extends Collector
      */
     protected $variableUriRules = [];
 
-    public function addRule(Rule $rule,array $methods = []):Collector
+    public function addRule(Rule $rule):Collector
     {
         $this->allRules[$rule->ruleId] = $rule;
-        if (empty($methods)) {
-            $methods = $rule->getMethods();
+
+        if ($rule->isGroupRule() && isset($this->groups[$rule->groupId])) {
+            // 分组路由
+            $this->addGroupRule($rule);
+        } else {
+            $this->addRouteRule($rule);
         }
 
+        return $this;
+    }
+
+    protected function addRouteRule(Rule $rule)
+    {
+        if ($rule->hasInitStatus()) {
+            return ;
+        }
+
+        $lazyStatus = $this->routeMatcher->getLazy();
+        if (!$lazyStatus) {
+            $rule->init();
+            return ;
+        }
+
+        // 以下代码实现延迟加载逻辑
+        $methods = $rule->getMethods();
+
+        // 普通路由
         $uri = $rule->getUri();
         $action = $rule->getAction();
-
         foreach ($methods as $method) {
             if ($rule->getId() !== '') {
                 $this->constantActionRules[$method][$rule->getId()] = $rule;
             }
 
+            // 延迟加载
             $this->variableUriRules[$method][$uri] = $rule;
             $this->variableActionRules[$method][$action] = $rule;
         }
+    }
 
-        return $this;
+    protected function addGroupRule(Rule $rule)
+    {
+        $groupRule = $this->groups[$rule->groupId];
+        $groupRule->getCollector()->addRule($rule);
     }
 
     public function initRule(Rule $rule):void
     {
         $this->allRules[$rule->ruleId] = $rule;
 
+        $this->intiRouteRule($rule);
+
+        // 初始化分组收集器规则
+        if ($rule->isGroupRule() && isset($this->groups[$rule->groupId])) {
+            $groupRule = $this->groups[$rule->groupId];
+            $groupRule->getCollector()->initRule($rule);
+        }
+    }
+
+    protected function intiRouteRule(Rule $rule)
+    {
         $hasUriVar = $rule->hasUriVar();
         $hasActionVar = $rule->hasActionVar();
         $methods = $rule->getMethods();
@@ -70,7 +108,7 @@ class FastCollector extends Collector
         $id = $rule->getId();
 
         $groupRule = null;
-        if ($rule->groupId !== '') {
+        if ($rule->isGroupRule() && isset($this->groups[$rule->groupId])) {
             $groupRule = $this->groups[$rule->groupId];
         }
 
@@ -99,46 +137,9 @@ class FastCollector extends Collector
                 unset($this->variableUriRules[$method][$uri]);
                 unset($this->variableActionRules[$method][$action]);
             }
-
-        }
-
-        // 初始化分组收集器规则
-        if (!is_null($groupRule) && !($groupRule->falseGroup)) {
-            $groupRule->getCollector()->initGroupSubRule($rule);
         }
     }
 
-    public function initGroupSubRule(Rule $rule):void
-    {
-        $hasUriVar = $rule->hasUriVar();
-        $hasActionVar = $rule->hasActionVar();
-        $methods = $rule->getMethods();
-        $uri = $rule->getUri();
-        $action = $rule->getAction();
-        $id = $rule->getId();
-
-        foreach ($methods as $method) {
-            if ($id !== '') {
-                $this->constantActionRules[$method][$id] = $rule;
-            }
-
-            // 生成URL缓存
-            if (!$hasActionVar) {
-                $this->constantActionRules[$method][$action] = $rule;
-                unset($this->variableActionRules[$method][$action]);
-            } else {
-                $this->variableActionRules[$method][$action] = $rule;
-            }
-
-            // 解析URL缓存
-            if (!$hasUriVar) {
-                $this->constantUriRules[$method][$uri] = $rule;
-                unset($this->variableUriRules[$method][$uri]);
-            } else {
-                $this->variableUriRules[$method][$uri] = $rule;
-            }
-        }
-    }
 
     protected function getConstantActionRules(string $action):array
     {
@@ -244,28 +245,28 @@ class FastCollector extends Collector
         }
     }
 
-    public function buildRouteCache(RouteMatcher $routeMatcher,$caches):array
+    public function buildRouteCache(array $caches):array
     {
 
-        $caches = $this->buildVarRouteCache($routeMatcher,$caches);
-        if ($routeMatcher->getMergeRule()) {
-            $caches['mergeCaches'] = $this->buildMergeCache($routeMatcher);
+        $caches = $this->buildVarRouteCache($caches);
+        if ($this->routeMatcher->getMergeRule()) {
+            $caches['mergeCaches'] = $this->buildMergeCache();
         }
 
         return $caches;
     }
 
-    public function restoreRouteCache(RouteMatcher $routeMatcher,array $caches):void
+    public function restoreRouteCache(array $caches):void
     {
 
-        $this->restoreVarRouteCache($routeMatcher,$caches);
-        if ($routeMatcher->getMergeRule()) {
-            $this->restoreMergeCache($routeMatcher,$caches);
+        $this->restoreVarRouteCache($caches);
+        if ($this->routeMatcher->getMergeRule()) {
+            $this->restoreMergeCache($caches);
         }
 
     }
 
-    protected function buildVarRouteCache(RouteMatcher $routeMatcher,array $caches):array
+    protected function buildVarRouteCache(array $caches):array
     {
         foreach (['constantActionRules','variableActionRules','constantUriRules','variableUriRules'] as $name) {
             $cacheItems = [];
@@ -282,7 +283,7 @@ class FastCollector extends Collector
         return $caches;
     }
 
-    protected function restoreVarRouteCache(RouteMatcher $routeMatcher,array $caches):void
+    protected function restoreVarRouteCache(array $caches):void
     {
         foreach (['constantActionRules','variableActionRules','constantUriRules','variableUriRules'] as $name) {
             $cacheItems = [];
@@ -298,13 +299,13 @@ class FastCollector extends Collector
         }
     }
 
-    public function buildMergeCache(RouteMatcher $routeMatcher,string $prefix = ''):array
+    public function buildMergeCache(string $prefix = ''):array
     {
         $cacheItems = [];
         foreach (['variableActionRules','variableUriRules'] as $name) {
             foreach ($this->{$name} as $method => $rules) {
                 $rules = array_values($rules);
-                $mergeLen = $routeMatcher->getMergeLen();
+                $mergeLen = $this->routeMatcher->getMergeLen();
                 $ruleList = ($mergeLen === 0) ? [$rules] : array_chunk($rules,$mergeLen);
                 if ($name == 'variableActionRules') {
                     $key = 'act.' . $method;
@@ -319,9 +320,9 @@ class FastCollector extends Collector
                 $cacheItems[$key]['-'] = count($rules);
                 foreach ($ruleList as $index=>$mergeRules) {
                     if ($name == 'variableActionRules') {
-                        $uriRegexs = $routeMatcher->mergeActionRulesRegex($mergeRules);
+                        $uriRegexs = $this->routeMatcher->mergeActionRulesRegex($mergeRules);
                     } else if ($name == 'variableUriRules') {
-                        $uriRegexs = $routeMatcher->mergeUriRulesRegex($mergeRules);
+                        $uriRegexs = $this->routeMatcher->mergeUriRulesRegex($mergeRules);
                     }
 
                     $cacheItems[$key][$index] = $uriRegexs;
@@ -332,7 +333,7 @@ class FastCollector extends Collector
         // 分组缓存
         if (!empty($this->groups)) {
             foreach ($this->groups as $group) {
-                $groupCaches = $group->getCollector()->buildMergeCache($routeMatcher,$group->gid);
+                $groupCaches = $group->getCollector()->buildMergeCache($group->gid);
                 $cacheItems = array_merge($cacheItems,$groupCaches);
             }
         }
@@ -340,7 +341,7 @@ class FastCollector extends Collector
         return $cacheItems;
     }
 
-    public function restoreMergeCache(RouteMatcher $routeMatcher,array $caches = []):void
+    public function restoreMergeCache(array $caches = []):void
     {
 
         // 合并缓存分组id转换

@@ -89,6 +89,7 @@ class AnnTest extends TestCase
     {
         if (!$this->checkVersion()) {return;}
         $matchingResult = $this->getRouter()->parseRequest($this->createRequest("auth/doadd"));
+        //var_dump($matchingResult->getUri());
         $this->assertTrue($matchingResult->getUri() == "auth/add");
 
         $url = $this->getRouter()->buildUrl('auth/add');

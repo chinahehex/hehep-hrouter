@@ -18,6 +18,21 @@ class RouteCacheTest extends TestCase
         Route::resetRoute();
     }
 
+//    public function testok()
+//    {
+//        $url = 'http://www.baidu.com';
+//        $url = 'news_id';
+//        $url = 'http://www.baidu.com:80/user/ok';
+////        $url = 'www.baidu.com/user/ok';
+////        $url = 'http://www.baidu.com/user/ok.html';
+////        $url = 'http://www.baidu.com/user/ok?id=1';
+//        $url = 'http://www.baidu.com/user/ok?id=1#red';
+////        $url = 'user/ok';
+////        $url = 'user/ok.html';
+//        $info = parse_url($url);
+//        var_dump($info);
+//    }
+
 
     public function testRoute()
     {

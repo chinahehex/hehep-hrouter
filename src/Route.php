@@ -67,6 +67,18 @@ class Route
      */
     public static $currentGroup;
 
+
+    public static function register($rule)
+    {
+        if (!is_null(static::$currentGroup)) {
+            static::$currentGroup->addSubRule($rule);
+        } else if (!is_null(static::$routeManager)) {
+            static::$routeManager->register($rule);
+        } else {
+            static::$rules[] = $rule;
+        }
+    }
+
     /**
      * 添加路由规则
      * @param string $uri
@@ -83,16 +95,37 @@ class Route
         return $rule;
     }
 
-    public static function register($rule)
+    /**
+     * 添加路由规则
+     *<B>说明：</B>
+     *<pre>
+     *  略
+     *</pre>
+     * @param ?array $rules 路由规则
+     */
+    public static function addRules(?array $rules):void
     {
-        if (!is_null(static::$currentGroup)) {
-            static::$currentGroup->addSubRule($rule);
-        } else if (!is_null(static::$routeManager)) {
-            static::$routeManager->register($rule);
+        if (is_null($rules)) {
+            static::$rules = [];
         } else {
-            static::$rules[] = $rule;
+            static::$rules = array_merge(static::$rules,$rules);
         }
     }
+
+    /**
+     * 创建路由分组
+     * @param string $uri
+     * @param ?callable $action
+     * @return GroupRule
+     */
+    public static function addGroup($uri = '',?callable $action = null):GroupRule
+    {
+        $groupRule = RouteManager::createGroup($uri,$action);
+        static::register($groupRule);
+
+        return $groupRule;
+    }
+
 
     public static function get(string $uri = '',string $action = '',array $options = [])
     {
@@ -127,37 +160,6 @@ class Route
     public static function any(string $uri = '',string $action = '',array $options = [])
     {
         return static::addRoute($uri,$action,self::ANY_METHOD,$options);
-    }
-
-    /**
-     * 添加路由规则
-     *<B>说明：</B>
-     *<pre>
-     *  略
-     *</pre>
-     * @param ?array $rules 路由规则
-     */
-    public static function addRules(?array $rules):void
-    {
-        if (is_null($rules)) {
-            static::$rules = [];
-        } else {
-            static::$rules = array_merge(static::$rules,$rules);
-        }
-    }
-
-    /**
-     * 创建路由分组
-     * @param string $uri
-     * @param ?callable $action
-     * @return GroupRule
-     */
-    public static function addGroup($uri = '',?callable $action = null):GroupRule
-    {
-        $groupRule = RouteManager::createGroup($uri,$action);
-        static::register($groupRule);
-
-        return $groupRule;
     }
 
     /**

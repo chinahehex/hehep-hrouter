@@ -52,8 +52,7 @@ class RouteRequest
             return $this->_pathinfo;
         }
 
-        $pathinfo = $this->getPathinfo();
-        $pathinfo = urldecode($pathinfo);
+        $pathinfo = urldecode($this->getPathinfo());
         if (!preg_match('%^(?:
                 [\x09\x0A\x0D\x20-\x7E]              # ASCII
                 | [\xC2-\xDF][\x80-\xBF]             # non-overlong 2-byte
@@ -67,10 +66,7 @@ class RouteRequest
             $pathinfo = utf8_encode($pathinfo);
         }
 
-        // 解析?
         $urlparse = parse_url($pathinfo);
-
-        $params = [];
         $url = $urlparse['path'];
         if (!empty($url) && substr($url,0,1) == '/') {
             $url = substr($url,1);
@@ -80,12 +76,6 @@ class RouteRequest
         }
 
         $this->_pathinfo = $url;
-
-        if (isset($urlparse['query'])) {
-            parse_str($urlparse['query'],$params);
-        }
-
-        $this->params = $params;
 
         return $this->_pathinfo;
     }

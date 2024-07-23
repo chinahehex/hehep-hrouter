@@ -277,6 +277,9 @@ $routeMatcher = $hrouter->getRouteMatcher();
 // 解析URL地址
 $matchingResult = $hrouter->parseRequest();
 
+// 是否匹配成功
+$matchingResult->isMatchSuccess();
+
 // 获取解析结果
 $action = $matchingResult->getUri();//  获取解析后的"路由地址"
 $params = $matchingResult->getParams();// 获取解析后的额外参数

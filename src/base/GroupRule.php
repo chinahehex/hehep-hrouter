@@ -66,8 +66,7 @@ class GroupRule extends Rule
     public function getCollector():Collector
     {
         if (is_null($this->collector)) {
-            $class = $this->routeMatcher->getCollectorClass();
-            $this->collector = new $class();
+            $this->collector = $this->routeMatcher->createCollector();
         }
 
         return $this->collector;
@@ -233,20 +232,17 @@ class GroupRule extends Rule
             $this->action = $this->uri;
         }
 
-        $this->routeMatcher->getCollector()->addGroup($this);
-
         if ($this->falseGroup) {
             // 添加子路由至路由解析器
             $this->routeMatcher->addRules($this->subRules);
             // 分组转普通规则器
             $this->routeMatcher->addRule($this->groupToRule());
         } else {
+            $this->routeMatcher->getCollector()->addGroup($this);
             // 添加当前分组至路由解析器
             $this->routeMatcher->addRule($this);
             // 添加子路由至路由解析器
             $this->routeMatcher->addRules($this->subRules);
-            // 添加子路由至分组路由收集器
-            $this->getCollector()->addRules($this->subRules);
         }
     }
 

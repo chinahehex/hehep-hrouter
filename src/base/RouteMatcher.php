@@ -83,19 +83,27 @@ abstract class RouteMatcher
 
     }
 
-    public function getCollectorClass():string
-    {
-        return $this->collectorClass;
-    }
-
     public function getCollector():Collector
     {
         if (is_null($this->collector)) {
-            $class = $this->collectorClass;
-            $this->collector = new $class();
+            $this->collector = $this->createCollector();
         }
 
         return $this->collector;
+    }
+
+    public function createCollector():Collector
+    {
+        $class = $this->collectorClass;
+        $collector = new $class();
+        $collector->setRouteMatcher($this);
+
+        return $collector;
+    }
+
+    public function getLazy():bool
+    {
+        return $this->lazy;
     }
 
     /**
@@ -272,10 +280,10 @@ abstract class RouteMatcher
         }
 
         $ruleSize = count($rules);
-        $cacheStauts = $this->getCollector()->isActiveCache($cacheKey,$ruleSize);
+        $cacheStauts = $this->getCollector()->checkMergeCacheStatus($cacheKey,$ruleSize);
         if (!$cacheStauts) {
             // 缓存失效,清空上次缓存
-            $this->getCollector()->initKeyCache($cacheKey,$ruleSize);
+            $this->getCollector()->resetKeyCache($cacheKey,$ruleSize);
         }
 
         // 分隔数组,避免合并字符串字符数量超过限制
@@ -305,23 +313,23 @@ abstract class RouteMatcher
 
             // 分离出正常的参数
             $matchParams = [];
-            $rule_index = '';
+            $ruleIndex = '';
             foreach ($matches as $key=>$value) {
                 if (is_string($key) && $value !== '') {
-                    list($name,$rule_index) = explode(self::MERGE_SPLIT_NAME,$key);
+                    list($name,$ruleIndex) = explode(self::MERGE_SPLIT_NAME,$key);
                     /** @var Rule $rule */
-                    $rule = $mergeRules[$rule_index];
+                    $rule = $mergeRules[$ruleIndex];
                     $value = $rule->trimMergeVar($name,$value);
                     $matchParams[$name] = $value;
                 }
             }
 
-            if ($rule_index === '') {
-                $rule_index = array_search(Rule::MERGE_VAR_FLAG. $pathinfo . Rule::MERGE_VAR_FLAG, $mergeRegexs);
+            if ($ruleIndex === '') {
+                $ruleIndex = array_search(Rule::MERGE_VAR_FLAG. $pathinfo . Rule::MERGE_VAR_FLAG, $mergeRegexs);
             }
 
             /** @var Rule $rule */
-            $rule = $mergeRules[$rule_index];
+            $rule = $mergeRules[$ruleIndex];
             return $rule->parseRequest($pathinfo,$routeRequest,$matchParams);
         }
 
@@ -343,10 +351,10 @@ abstract class RouteMatcher
         }
 
         $ruleSize = count($rules);
-        $cacheStauts = $this->getCollector()->isActiveCache($cacheKey,$ruleSize);
+        $cacheStauts = $this->getCollector()->checkMergeCacheStatus($cacheKey,$ruleSize);
         if (!$cacheStauts) {
             // 缓存失效,清空上次缓存
-            $this->getCollector()->initKeyCache($cacheKey,$ruleSize);
+            $this->getCollector()->resetKeyCache($cacheKey,$ruleSize);
         }
 
         // 分隔数组,避免合并字符串字符数量超过限制
@@ -372,23 +380,23 @@ abstract class RouteMatcher
 
             // 分离出正常的参数
             $matchParams = [];
-            $rule_index = '';
+            $ruleIndex = '';
             foreach ($matches as $key=>$value) {
                 if (is_string($key) && $value !== '') {
-                    list($name,$rule_index) = explode(self::MERGE_SPLIT_NAME,$key);
+                    list($name,$ruleIndex) = explode(self::MERGE_SPLIT_NAME,$key);
                     /** @var Rule $rule */
-                    $rule = $mergeRules[$rule_index];
+                    $rule = $mergeRules[$ruleIndex];
                     $value = $rule->trimMergeVar($name,$value);
                     $matchParams[$name] = $value;
                 }
             }
 
-            if ($rule_index === '') {
-                $rule_index = array_search(Rule::MERGE_VAR_FLAG . $uri . Rule::MERGE_VAR_FLAG, $mergeRegexs);
+            if ($ruleIndex === '') {
+                $ruleIndex = array_search(Rule::MERGE_VAR_FLAG . $uri . Rule::MERGE_VAR_FLAG, $mergeRegexs);
             }
 
             /** @var Rule $rule */
-            $rule = $mergeRules[$rule_index];
+            $rule = $mergeRules[$ruleIndex];
             return $rule->parseUrL($uri,$params,$matchParams);
         }
 
@@ -433,16 +441,14 @@ abstract class RouteMatcher
      *<pre>
      * 略
      *</pre>
-     * @param array $rules 匹配的规则列表
+     * @param ?array $rules 匹配的规则列表
      * @param string $uri action 地址
      * @param array $params 参数
      * @return array
      */
-    public function matchActionRules(array $rules = [],string $uri,array $params = [])
+    public function matchActionRules(?array $rules,string $uri,array $params = [])
     {
-
         $matchResult = false;
-
         if (!empty($rules)) {
             foreach ($rules as $rule) {
                 /** @var Rule $rule */
@@ -494,16 +500,29 @@ abstract class RouteMatcher
      */
     public function buildUrL(string $uri = '',array $params = [],array $options = [])
     {
-        $anchor = isset($params['#']) ? '#' . $params['#'] : '';
-        unset($params['#']);
 
-        // 查找后缀
+        $info = parse_url($uri);
+        // 域名
+        $domain = '';
+        if (isset($info['host'])) {
+            $domain = $info['scheme'] . '://' . $info['host'] . (isset($info['port']) ? ':' . $info['port'] : '');
+        }
+
+        $uri = $info['path'];
+
+        // 后缀
         $suffix = "";
         if (strpos($uri,'.') !== false) {
             list($uri,$suffix) = explode('.',$uri);
         }
 
-        // 查找域名
+        $anchor = isset($params['#']) ? '#' . $params['#'] : '';
+        unset($params['#']);
+        if ($anchor === '' && isset($info['fragment'])) {
+            $anchor = $info['fragment'];
+        }
+
+        // 匹配路由规则
         $matchResult = $this->matchAction($uri,$params,$options);
 
         $url = "";
@@ -517,7 +536,10 @@ abstract class RouteMatcher
 
         // 解析url域名
         if (preg_match('/^http(s?):\/\//i',$url) === 0) {
-            $domain = $this->getDomain($options,$matchRule);
+            if ($domain === '') {
+                $domain = $this->getDomain($options,$matchRule);
+            }
+
             $url = $domain != '' ? $domain  . $url : $url;
         }
 
@@ -552,21 +574,7 @@ abstract class RouteMatcher
      */
     public function addRule(Rule $rule):void
     {
-
-        $rule_methods = $rule->getMethods();
-        if (empty($rule_methods)) {
-            $rule_methods[] = Route::DEFAULT_METHOD;
-        }
-
-        if (!$rule->hasInitStatus()) {
-            // 路由规则未初始化
-            if ($this->lazy) {
-                $this->getCollector()->addRule($rule,$rule_methods);
-            } else {
-                $rule->init();
-            }
-        }
-
+        $this->getCollector()->addRule($rule);
     }
 
     /**

@@ -111,23 +111,49 @@ class RouteManager
      */
     protected function injectRules()
     {
+        $injectResult = false;
+        if ($this->onRouteCache) {
+            $injectResult = $this->injectRouteCache();
+        }
 
+        if ($injectResult === false) {
+            $this->ruleAddtoRouteMatcher();
+        }
+
+    }
+
+    /**
+     * 注入缓存路由至路由解析器
+     * @return bool
+     */
+    protected function injectRouteCache()
+    {
+        $routeCache = $this->getRouteCache();
+        if ($routeCache->checkCacheStatus()) {
+            $routeCache->injectRules();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 路由缓存写入文件
+     */
+    protected function writeRouteCache()
+    {
         if ($this->onRouteCache) {
             $routeCache = $this->getRouteCache();
-            if ($routeCache->checkCacheStatus()) {
-                $routeCache->injectRules();
-            } else {
-                $this->rulesAddtoRouter();
+            if (!$routeCache->checkCacheStatus()) {
+                $routeCache->writeRules();
             }
-        } else {
-            $this->rulesAddtoRouter();
         }
     }
 
     /**
      * 注入路由规则至路由解析器
      */
-    protected function rulesAddtoRouter()
+    protected function ruleAddtoRouteMatcher()
     {
         /** @var Rule[] $rules */
         $rules = [];
@@ -239,29 +265,27 @@ class RouteManager
             return $this->_routeMatcher;
         }
 
-        $router_config = $this->routeMatcher;
+        $routeMatcherConfig = $this->routeMatcher;
 
         // 路由检查
-        if (isset($router_config['class']) && strpos($router_config['class'],'\\') !== false) {// 采用命名空间
-            $routerClass = $router_config['class'];
+        if (isset($routeMatcherConfig['class']) && strpos($routeMatcherConfig['class'],'\\') !== false) {// 采用命名空间
+            $routeMatcherClass = $routeMatcherConfig['class'];
         } else {
-            $routerClass = __NAMESPACE__ . '\\' . $router_config['class'];
+            $routeMatcherClass = __NAMESPACE__ . '\\' . $routeMatcherConfig['class'];
         }
 
-        /** @var RouteMatcher $routeMatcher */
-        $routeMatcher = new $routerClass($router_config);
-        $this->_routeMatcher = $routeMatcher;
+        $this->_routeMatcher = new $routeMatcherClass($routeMatcherConfig);
 
         return $this->_routeMatcher;
     }
 
     /**
      * 设置路由解析器配置
-     * @param array $routerConfig 路由解析器配置
+     * @param array $routeMatcherConfig 路由解析器配置
      */
-    public function setRouteMatcher(array $routerConfig = []):self
+    public function setRouteMatcher(array $routeMatcherConfig = []):self
     {
-        $this->routeMatcher = array_merge($this->routeMatcher,$routerConfig);
+        $this->routeMatcher = array_merge($this->routeMatcher,$routeMatcherConfig);
 
         return $this;
     }
@@ -315,7 +339,7 @@ class RouteManager
      */
     public function createRouteRequest(?string $routeRequestClass = ''):RouteRequest
     {
-        if (!empty($routeRequestClass)) {
+        if ($routeRequestClass !== '') {
             $class = $routeRequestClass;
         } else {
             $class = $this->routeRequest['class'];
@@ -326,8 +350,10 @@ class RouteManager
 
         $routeRequestConfig = $this->routeRequest;
         unset($routeRequestConfig['class']);
+        $routeRequest = new $class($routeRequestConfig);
+        $routeRequest->setRouteManager($this);
 
-        return new $class($routeRequestConfig);
+        return $routeRequest;
     }
 
     /**
@@ -445,7 +471,6 @@ class RouteManager
             }
         } else {
             $routeRequest = $this->createRouteRequest($routeRequest);
-            $routeRequest->setRouteManager($this);
         }
 
         // 匹配路由规则
@@ -461,12 +486,7 @@ class RouteManager
         $routeRequest->setMatchingResult($matchingResult);
 
         // 路由缓存处理
-        if ($this->onRouteCache) {
-            $routeCache = $this->getRouteCache();
-            if (!$routeCache->checkCacheStatus()) {
-                $routeCache->writeRules();
-            }
-        }
+        $this->writeRouteCache();
 
         return $matchingResult;
     }
@@ -486,12 +506,7 @@ class RouteManager
         $matchResult = $this->getRouteMatcher()->buildUrL($url,$params,$options);
 
         // 路由缓存处理
-        if ($this->onRouteCache) {
-            $routeCache = $this->getRouteCache();
-            if (!$routeCache->checkCacheStatus()) {
-                $routeCache->writeRules();
-            }
-        }
+        $this->writeRouteCache();
 
         return $matchResult;
     }
